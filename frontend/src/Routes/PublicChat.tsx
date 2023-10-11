@@ -11,6 +11,9 @@ import {
   Message,
   MessageInput,
   Avatar,
+  Sidebar,
+  ConversationList,
+  Conversation,
 } from "@chatscope/chat-ui-kit-react";
 
 type ChatUpdateDataType = {
@@ -24,7 +27,7 @@ export default function PublicChat() {
 
   const location = useLocation();
 
-  const userName = location.state.userName;
+  const { userName, dispachersData } = location.state;
 
   React.useEffect(() => {
     const channel = pusherClient.subscribe("publicChannel");
@@ -51,10 +54,37 @@ export default function PublicChat() {
     });
   };
 
+  const handleConversationClick = async ({ id }: { id: number }) => {};
+
   return (
     <div className="h-[100vh] w-full flex justify-center items-center">
       <div className="h-[80%] w-[90%]">
         <MainContainer responsive>
+          <Sidebar position="left" scrollable={true}>
+            <ConversationList>
+              {dispachersData.map(
+                (dispatcher: { name: string; id: number }) => {
+                  if (dispatcher.name === userName) {
+                    return;
+                  }
+                  return (
+                    <Conversation
+                      onClick={() =>
+                        handleConversationClick({ id: dispatcher.id })
+                      }
+                    >
+                      {/* <Avatar name={dispatcher.name} status="available" /> */}
+                      <Conversation.Content
+                        name={dispatcher.name}
+                        // lastSenderName="Lilly"
+                        info="Yes i can do it for you"
+                      />
+                    </Conversation>
+                  );
+                }
+              )}
+            </ConversationList>
+          </Sidebar>
           <ChatContainer>
             <MessageList>
               {chats.map((chat) => {

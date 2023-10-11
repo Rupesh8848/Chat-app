@@ -14,12 +14,19 @@ function App() {
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
-    const response = await axios.post("http://localhost:8000/login", {
-      userName,
-    });
+    const response = await axios.post(
+      "http://localhost:8000/api/user/auth/login",
+      {
+        dispatcherName: userName,
+      }
+    );
     console.log(response.data);
-    if (userName) {
-      navigate("/select-channel");
+    if (response.status === 200) {
+      navigate("public-chat", {
+        state: { userName, dispachersData: response.data },
+      });
+    } else if (response.status === 400) {
+      console.log(response.data.message);
     }
   };
 

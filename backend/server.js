@@ -8,6 +8,7 @@ require("dotenv").config();
 const pusherAuthRoute = require("./routes/pusherAuthRoute");
 const { messageRoute } = require("./routes/messageRoute");
 const { pusherServer } = require("./lib/pusher");
+const userRoute = require("./routes/userRoute");
 
 const app = express();
 
@@ -26,15 +27,7 @@ app.use(
 // routes
 app.use("/api/auth", pusherAuthRoute);
 app.use("/api/message", messageRoute);
-
-app.post("/login", (req, res) => {
-  console.log("Session creator api hit", req.body.userName);
-
-  req.session.user = { userName: req.body.userName };
-  req.session.save();
-  console.log(req.session);
-  return res.send(req.session);
-});
+app.use("/api/user", userRoute);
 
 app.post("/pusher/auth", (request, response) => {
   const socketId = request.body.socket_id;
