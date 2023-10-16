@@ -14,6 +14,7 @@ import {
   Sidebar,
   ConversationList,
   Conversation,
+  TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
 
 type ChatUpdateDataType = {
@@ -44,6 +45,11 @@ type MessageNotificationStateType = {
   channelName?: string;
 };
 
+type IsTypingDataType = {
+  senderUserName?: string;
+  message?: string;
+  reciverName?: string;
+};
 export default function PublicChat() {
   const [chats, setChats] = React.useState<Array<ChatUpdateDataType>>([]);
   const [message, setMessage] = React.useState("");
@@ -52,6 +58,10 @@ export default function PublicChat() {
     React.useState<MessageNotificationStateType>({ seen: true });
 
   const [selectedReceiver, setSelectedReceiver] = React.useState<Dispatcher>();
+
+  const [isTypingData, setIsTypingData] = React.useState<
+    IsTypingDataType & { isTyping: boolean }
+  >({ isTyping: false });
 
   const location = useLocation();
 
@@ -78,13 +88,20 @@ export default function PublicChat() {
         channel.bind("chat-update", (data: ChatUpdateDataType) => {
           console.log("Inside chat update: ", data);
           const { message, userName } = data;
-          setChats((oldChats) => [
-            ...oldChats,
-            {
-              message,
-              userName,
-            },
-          ]);
+
+          setChats((oldChats) => {
+            if (messageNotification.senderUserName === selectedReceiver?.name) {
+              return [
+                ...oldChats,
+                {
+                  message,
+                  userName,
+                },
+              ];
+            } else {
+              return oldChats;
+            }
+          });
         });
         setMessageNotification({ ...data, seen: false });
       }
@@ -111,6 +128,14 @@ export default function PublicChat() {
             userName,
           },
         ]);
+      });
+
+      channel.bind("is-typing", (data: IsTypingDataType) => {
+        if (data.reciverName !== userData.name) return;
+        setIsTypingData({ ...data, isTyping: true });
+        setTimeout(() => {
+          setIsTypingData({ isTyping: false });
+        }, 3000);
       });
     });
 
@@ -151,6 +176,19 @@ export default function PublicChat() {
     });
   };
 
+  const isTypingHandler = async () => {
+    if (!selectedReceiver) return;
+    await axios.post("http://localhost:8000/api/typing-status/", {
+      userName: userData.name,
+      message,
+      reciverName: selectedReceiver.name,
+      channel:
+        userData.name > selectedReceiver?.name
+          ? `presence-${selectedReceiver?.name}-${userData.name}`
+          : `presence-${userData.name}-${selectedReceiver?.name}`,
+    });
+  };
+
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
     setMessageNotification((oldData) => ({ ...oldData, seen: true }));
     console.log(selectedDispatcher);
@@ -173,6 +211,10 @@ export default function PublicChat() {
                       dispatcher.name === selectedReceiver?.name
                         ? "bg-gray-500"
                         : ""
+                    } ${
+                      messageNotification.senderUserName === dispatcher.name
+                        ? "bg-red-400"
+                        : ""
                     }`}
                     onClick={() => handleConversationClick(dispatcher)}
                   >
@@ -180,12 +222,6 @@ export default function PublicChat() {
                     <Conversation.Content
                       name={dispatcher.name}
                       // lastSenderName="Lilly"
-                      info={
-                        messageNotification.seen &&
-                        messageNotification.senderUserName === dispatcher.name
-                          ? ""
-                          : messageNotification.message
-                      }
                     />
                   </Conversation>
                 );
@@ -224,9 +260,15 @@ export default function PublicChat() {
                 );
               })}
             </MessageList>
+            {isTypingData.isTyping && (
+              <TypingIndicator
+                content={`${isTypingData.senderUserName} is typing: ${isTypingData.message}`}
+              />
+            )}
             <MessageInput
               placeholder="Type message here"
               onChange={(text) => {
+                isTypingHandler();
                 setMessage(text);
               }}
               value={message}

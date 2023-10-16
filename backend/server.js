@@ -9,6 +9,7 @@ const pusherAuthRoute = require("./routes/pusherAuthRoute");
 const { messageRoute } = require("./routes/messageRoute");
 const { pusherServer } = require("./lib/pusher");
 const userRoute = require("./routes/userRoute");
+const { isTypingRoute } = require("./routes/isTypingRoute");
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use(
 app.use("/api/auth", pusherAuthRoute);
 app.use("/api/message", messageRoute);
 app.use("/api/user", userRoute);
+app.use("/api/typing-status", isTypingRoute);
 
 app.post("/pusher/auth", (request, response) => {
   const socketId = request.body.socket_id;
