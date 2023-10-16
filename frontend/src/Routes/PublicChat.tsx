@@ -54,7 +54,10 @@ export default function PublicChat() {
 
   const [selectedReceiver, setSelectedReceiver] = React.useState<Dispatcher>();
 
-  const [isTypingData, setIsTypingData] = React.useState(false);
+  const [isTypingData, setIsTypingData] = React.useState<{
+    message: string;
+    isTyping: boolean;
+  }>({ message: "", isTyping: false });
 
   const location = useLocation();
 
@@ -123,12 +126,12 @@ export default function PublicChat() {
         ]);
       });
 
-      channel.bind("is-typing", () => {
+      channel.bind("is-typing", (data) => {
         // if (data.reciverName !== userData.name) return;
         console.log("Typing event received");
-        setIsTypingData(true);
+        setIsTypingData({ message: data.message, isTyping: true });
         setTimeout(() => {
-          setIsTypingData(false);
+          setIsTypingData({ message: "", isTyping: false });
         }, 2000);
       });
     });
@@ -175,6 +178,7 @@ export default function PublicChat() {
     await axios.post("http://localhost:8000/api/typing-status/", {
       userName: userData.name,
       reciverName: selectedReceiver.name,
+      message,
       channel:
         userData.name > selectedReceiver?.name
           ? `presence-${selectedReceiver?.name}-${userData.name}`
@@ -224,7 +228,7 @@ export default function PublicChat() {
           <ChatContainer>
             <MessageList
               typingIndicator={
-                isTypingData && (
+                isTypingData.isTyping && (
                   <TypingIndicator
                     content={`${selectedReceiver?.name} is typing`}
                   />
@@ -265,8 +269,8 @@ export default function PublicChat() {
             <MessageInput
               placeholder="Type message here"
               onChange={(text) => {
-                isTypingHandler();
                 setMessage(text);
+                isTypingHandler();
               }}
               value={message}
               onSend={() => {
