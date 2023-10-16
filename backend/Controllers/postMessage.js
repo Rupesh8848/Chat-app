@@ -41,6 +41,12 @@ const postPublicMessage = async (req, res) => {
       const updateRes = await userRef.update({
         channels: firestore.FieldValue.arrayUnion(channel),
       });
+      pusherServer.trigger("notification", "message-notification", {
+        receiverUserName: reciverName,
+        message: message,
+        senderUserName: userName,
+        channelName: channel,
+      });
     }
 
     //for receiver

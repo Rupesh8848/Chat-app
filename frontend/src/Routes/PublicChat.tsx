@@ -29,9 +29,27 @@ type Dispatcher = {
 
 type UserData = Dispatcher;
 
+type MessageNotification = {
+  receiverUserName: string;
+  message: string;
+  senderUserName: string;
+  channelName: string;
+};
+
+type MessageNotificationStateType = {
+  seen: boolean;
+  receiverUserName?: string;
+  message?: string;
+  senderUserName?: string;
+  channelName?: string;
+};
+
 export default function PublicChat() {
   const [chats, setChats] = React.useState<Array<ChatUpdateDataType>>([]);
   const [message, setMessage] = React.useState("");
+
+  const [messageNotification, setMessageNotification] =
+    React.useState<MessageNotificationStateType>({ seen: true });
 
   const [selectedReceiver, setSelectedReceiver] = React.useState<Dispatcher>();
 
@@ -44,6 +62,32 @@ export default function PublicChat() {
   console.log(userData);
 
   React.useEffect(() => {
+    const publicChannel = pusherClient.subscribe("notification");
+
+    publicChannel.bind("message-notification", (data: MessageNotification) => {
+      const channel = pusherClient.subscribe(data.channelName);
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log("Subscribed to channel: ", channel);
+      });
+
+      channel.bind("pusher:subscription_error", (error) => {
+        console.log("Couldn't subscribe", error);
+      });
+
+      channel.bind("chat-update", (data: ChatUpdateDataType) => {
+        console.log("Inside chat update: ", data);
+        const { message, userName } = data;
+        setChats((oldChats) => [
+          ...oldChats,
+          {
+            message,
+            userName,
+          },
+        ]);
+      });
+      setMessageNotification({ ...data, seen: false });
+    });
+
     userData.channels.forEach((channelToSubscribe) => {
       const channel = pusherClient.subscribe(channelToSubscribe);
 
@@ -106,6 +150,7 @@ export default function PublicChat() {
   };
 
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
+    setMessageNotification((oldData) => ({ ...oldData, seen: true }));
     console.log(selectedDispatcher);
     setSelectedReceiver(selectedDispatcher);
   };
@@ -122,13 +167,22 @@ export default function PublicChat() {
                 }
                 return (
                   <Conversation
+                    className={`${
+                      dispatcher.name === selectedReceiver?.name
+                        ? "bg-gray-500"
+                        : ""
+                    }`}
                     onClick={() => handleConversationClick(dispatcher)}
                   >
                     {/* <Avatar name={dispatcher.name} status="available" /> */}
                     <Conversation.Content
                       name={dispatcher.name}
                       // lastSenderName="Lilly"
-                      info="Yes i can do it for you"
+                      info={
+                        messageNotification.seen
+                          ? ""
+                          : messageNotification.message
+                      }
                     />
                   </Conversation>
                 );
