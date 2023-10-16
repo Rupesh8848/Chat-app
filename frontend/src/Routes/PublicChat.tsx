@@ -45,11 +45,6 @@ type MessageNotificationStateType = {
   channelName?: string;
 };
 
-type IsTypingDataType = {
-  senderUserName?: string;
-  message?: string;
-  reciverName?: string;
-};
 export default function PublicChat() {
   const [chats, setChats] = React.useState<Array<ChatUpdateDataType>>([]);
   const [message, setMessage] = React.useState("");
@@ -59,9 +54,7 @@ export default function PublicChat() {
 
   const [selectedReceiver, setSelectedReceiver] = React.useState<Dispatcher>();
 
-  const [isTypingData, setIsTypingData] = React.useState<
-    IsTypingDataType & { isTyping: boolean }
-  >({ isTyping: false });
+  const [isTypingData, setIsTypingData] = React.useState(false);
 
   const location = useLocation();
 
@@ -130,12 +123,13 @@ export default function PublicChat() {
         ]);
       });
 
-      channel.bind("is-typing", (data: IsTypingDataType) => {
-        if (data.reciverName !== userData.name) return;
-        setIsTypingData({ ...data, isTyping: true });
+      channel.bind("is-typing", () => {
+        // if (data.reciverName !== userData.name) return;
+        console.log("Typing event received");
+        setIsTypingData(true);
         setTimeout(() => {
-          setIsTypingData({ isTyping: false });
-        }, 3000);
+          setIsTypingData(false);
+        }, 2000);
       });
     });
 
@@ -180,7 +174,6 @@ export default function PublicChat() {
     if (!selectedReceiver) return;
     await axios.post("http://localhost:8000/api/typing-status/", {
       userName: userData.name,
-      message,
       reciverName: selectedReceiver.name,
       channel:
         userData.name > selectedReceiver?.name
@@ -260,9 +253,9 @@ export default function PublicChat() {
                 );
               })}
             </MessageList>
-            {isTypingData.isTyping && (
+            {isTypingData && (
               <TypingIndicator
-                content={`${isTypingData.senderUserName} is typing: ${isTypingData.message}`}
+                content={`${selectedReceiver?.name} is typing`}
               />
             )}
             <MessageInput
