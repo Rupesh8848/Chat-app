@@ -21,40 +21,78 @@ type ChatUpdateDataType = {
   userName: string;
 };
 
+type Dispatcher = {
+  name: string;
+  id: number;
+  channels: Array<string>;
+};
+
+type UserData = Dispatcher;
+
 export default function PublicChat() {
   const [chats, setChats] = React.useState<Array<ChatUpdateDataType>>([]);
   const [message, setMessage] = React.useState("");
 
+  const [selectedReceiver, setSelectedReceiver] = React.useState<Dispatcher>();
+
   const location = useLocation();
 
-  const { userName, dispachersData } = location.state;
+  const {
+    userData,
+    dispachersData,
+  }: { userData: UserData; dispachersData: Array<Dispatcher> } = location.state;
+  console.log(userData);
 
   React.useEffect(() => {
-    const channel = pusherClient.subscribe("publicChannel");
+    userData.channels.forEach((channelToSubscribe) => {
+      const channel = pusherClient.subscribe(channelToSubscribe);
 
-    channel.bind("chat-update", (data: ChatUpdateDataType) => {
-      console.log("Inside chat update: ", data);
-      const { message, userName } = data;
-      setChats((oldChats) => [
-        ...oldChats,
-        {
-          message,
-          userName,
-        },
-      ]);
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log("Subscribed to channel: ", channel);
+      });
+
+      channel.bind("pusher:subscription_error", (error) => {
+        console.log("Couldn't subscribe", error);
+      });
+
+      channel.bind("chat-update", (data: ChatUpdateDataType) => {
+        console.log("Inside chat update: ", data);
+        const { message, userName } = data;
+        setChats((oldChats) => [
+          ...oldChats,
+          {
+            message,
+            userName,
+          },
+        ]);
+      });
     });
 
-    return () => pusherClient.unsubscribe("publicChannel");
+    return () => {
+      userData.channels.forEach((channelToUnSub) => {
+        pusherClient.unsubscribe(channelToUnSub);
+      });
+    };
   }, []);
 
   const submitMessage = async () => {
+    console.log(selectedReceiver);
+    if (!selectedReceiver) return;
     await axios.post("http://localhost:8000/api/message/public", {
-      userName,
+      userName: userData.name,
       message,
+      reciverName: selectedReceiver.name,
+      channel:
+        userData.name > selectedReceiver?.name
+          ? `presence-${selectedReceiver?.name}-${userData.name}`
+          : `presence-${userData.name}-${selectedReceiver?.name}`,
     });
   };
 
-  const handleConversationClick = async ({ id }: { id: number }) => {};
+  const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
+    console.log(selectedDispatcher);
+    setSelectedReceiver(selectedDispatcher);
+  };
 
   return (
     <div className="h-[100vh] w-full flex justify-center items-center">
@@ -62,27 +100,23 @@ export default function PublicChat() {
         <MainContainer responsive>
           <Sidebar position="left" scrollable={true}>
             <ConversationList>
-              {dispachersData.map(
-                (dispatcher: { name: string; id: number }) => {
-                  if (dispatcher.name === userName) {
-                    return;
-                  }
-                  return (
-                    <Conversation
-                      onClick={() =>
-                        handleConversationClick({ id: dispatcher.id })
-                      }
-                    >
-                      {/* <Avatar name={dispatcher.name} status="available" /> */}
-                      <Conversation.Content
-                        name={dispatcher.name}
-                        // lastSenderName="Lilly"
-                        info="Yes i can do it for you"
-                      />
-                    </Conversation>
-                  );
+              {dispachersData.map((dispatcher: Dispatcher) => {
+                if (dispatcher.name === userData.name) {
+                  return;
                 }
-              )}
+                return (
+                  <Conversation
+                    onClick={() => handleConversationClick(dispatcher)}
+                  >
+                    {/* <Avatar name={dispatcher.name} status="available" /> */}
+                    <Conversation.Content
+                      name={dispatcher.name}
+                      // lastSenderName="Lilly"
+                      info="Yes i can do it for you"
+                    />
+                  </Conversation>
+                );
+              })}
             </ConversationList>
           </Sidebar>
           <ChatContainer>

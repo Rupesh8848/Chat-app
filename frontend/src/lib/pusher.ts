@@ -10,5 +10,11 @@ export const pusherClient = new Pusher(import.meta.env.VITE_KEY, {
   channelAuthorization: {
     endpoint: "http://localhost:8000/pusher/auth",
     transport: "ajax",
+    paramsProvider() {
+      const userData = localStorage.getItem("userData");
+      if (!userData) return {};
+      console.log(JSON.parse(userData));
+      return JSON.parse(userData);
+    },
   },
 });

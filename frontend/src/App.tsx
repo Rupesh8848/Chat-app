@@ -22,8 +22,12 @@ function App() {
     );
     console.log(response.data);
     if (response.status === 200) {
+      localStorage.setItem("userData", JSON.stringify(response.data.userData));
       navigate("public-chat", {
-        state: { userName, dispachersData: response.data },
+        state: {
+          userData: response.data.userData,
+          dispachersData: response.data.dispatchersData,
+        },
       });
     } else if (response.status === 400) {
       console.log(response.data.message);

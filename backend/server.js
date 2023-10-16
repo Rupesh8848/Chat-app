@@ -32,12 +32,14 @@ app.use("/api/user", userRoute);
 app.post("/pusher/auth", (request, response) => {
   const socketId = request.body.socket_id;
   const channel = request.body.channel_name;
+  const userName = request.body.userName;
+
   const presenceData = {
-    user_id: `${socketId}`,
+    user_id: `${userName}`,
   };
   const auth = pusherServer.authorizeChannel(socketId, channel, presenceData);
-  console.log(auth);
-  response.send(auth);
+
+  return response.send(auth);
 });
 
 app.listen(8000, () => {

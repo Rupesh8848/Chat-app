@@ -20,7 +20,9 @@ const userLogin = async (req, res) => {
     dispatchersData.push(doc.data());
   });
 
-  return res.status(200).send(dispatchersData);
+  return res
+    .status(200)
+    .json({ userData: snapshot.docs[0].data(), dispatchersData });
 };
 
 module.exports = { userLogin };
