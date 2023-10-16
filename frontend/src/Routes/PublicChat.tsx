@@ -230,7 +230,7 @@ export default function PublicChat() {
               typingIndicator={
                 isTypingData.isTyping && (
                   <TypingIndicator
-                    content={`${selectedReceiver?.name} is typing`}
+                    content={`${selectedReceiver?.name} is typing: ${isTypingData.message}`}
                   />
                 )
               }
