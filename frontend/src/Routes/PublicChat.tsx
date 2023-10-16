@@ -65,27 +65,29 @@ export default function PublicChat() {
     const publicChannel = pusherClient.subscribe("notification");
 
     publicChannel.bind("message-notification", (data: MessageNotification) => {
-      const channel = pusherClient.subscribe(data.channelName);
-      channel.bind("pusher:subscription_succeeded", () => {
-        console.log("Subscribed to channel: ", channel);
-      });
+      if (data.receiverUserName === userData.name) {
+        const channel = pusherClient.subscribe(data.channelName);
+        channel.bind("pusher:subscription_succeeded", () => {
+          console.log("Subscribed to channel: ", channel);
+        });
 
-      channel.bind("pusher:subscription_error", (error) => {
-        console.log("Couldn't subscribe", error);
-      });
+        channel.bind("pusher:subscription_error", (error) => {
+          console.log("Couldn't subscribe", error);
+        });
 
-      channel.bind("chat-update", (data: ChatUpdateDataType) => {
-        console.log("Inside chat update: ", data);
-        const { message, userName } = data;
-        setChats((oldChats) => [
-          ...oldChats,
-          {
-            message,
-            userName,
-          },
-        ]);
-      });
-      setMessageNotification({ ...data, seen: false });
+        channel.bind("chat-update", (data: ChatUpdateDataType) => {
+          console.log("Inside chat update: ", data);
+          const { message, userName } = data;
+          setChats((oldChats) => [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ]);
+        });
+        setMessageNotification({ ...data, seen: false });
+      }
     });
 
     userData.channels.forEach((channelToSubscribe) => {
@@ -179,7 +181,8 @@ export default function PublicChat() {
                       name={dispatcher.name}
                       // lastSenderName="Lilly"
                       info={
-                        messageNotification.seen
+                        messageNotification.seen &&
+                        messageNotification.senderUserName === dispatcher.name
                           ? ""
                           : messageNotification.message
                       }
