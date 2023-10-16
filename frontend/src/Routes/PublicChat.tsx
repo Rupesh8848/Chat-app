@@ -75,6 +75,22 @@ export default function PublicChat() {
     };
   }, []);
 
+  React.useEffect(() => {
+    console.log("Selected receiver changed");
+    async function fetchNewMesg() {
+      const response = await axios.get(
+        `http://localhost:8000/api/message/${userData.name}/${selectedReceiver?.name}`
+      );
+
+      setChats(response.data);
+      console.log(response.data);
+    }
+
+    if (selectedReceiver) {
+      fetchNewMesg();
+    }
+  }, [selectedReceiver]);
+
   const submitMessage = async () => {
     console.log(selectedReceiver);
     if (!selectedReceiver) return;
@@ -131,11 +147,13 @@ export default function PublicChat() {
                         sender: chat.userName,
                         sentTime: "Just Now",
                         direction:
-                          chat.userName === userName ? "outgoing" : "incoming",
+                          chat.userName === userData.name
+                            ? "outgoing"
+                            : "incoming",
                         position: "normal",
                       }}
                       avatarPosition={
-                        chat.userName === userName
+                        chat.userName === userData.name
                           ? "center-right"
                           : "center-left"
                       }

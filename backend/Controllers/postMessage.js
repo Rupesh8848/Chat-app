@@ -67,13 +67,15 @@ const postPublicMessage = async (req, res) => {
     }
 
     // add document to channel in db
-    const responseFromDB = await firestoreDB
-      .collection(channel)
-      .add({ message, userName });
+    const responseFromDB = await firestoreDB.collection(channel).add({
+      message,
+      userName,
+      created: firestore.FieldValue.serverTimestamp(),
+    });
 
     // if document successfully added to db then emit event
     if (responseFromDB.id) {
-      await pusherServer.trigger("publicChannel", "chat-update", {
+      await pusherServer.trigger(channel, "chat-update", {
         message,
         userName,
       });
@@ -85,4 +87,31 @@ const postPublicMessage = async (req, res) => {
   }
 };
 
-module.exports = { postMessage, postPublicMessage };
+const getMessages = async (req, res) => {
+  console.log("Fetch mesg hit");
+  const { senderName, receiverName } = req.params;
+
+  const channelName =
+    senderName > receiverName
+      ? `presence-${receiverName}-${senderName}`
+      : `presence-${senderName}-${receiverName}`;
+
+  console.log(channelName);
+
+  const messagesRef = firestoreDB
+    .collection(channelName)
+    .orderBy("created", "asc");
+
+  const snapshot = await messagesRef.get();
+
+  const messages = [];
+
+  snapshot.forEach((mesg) => {
+    messages.push(mesg.data());
+  });
+  console.log(messages);
+
+  return res.send(messages);
+};
+
+module.exports = { postMessage, postPublicMessage, getMessages };
