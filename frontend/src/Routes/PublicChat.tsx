@@ -222,7 +222,15 @@ export default function PublicChat() {
             </ConversationList>
           </Sidebar>
           <ChatContainer>
-            <MessageList>
+            <MessageList
+              typingIndicator={
+                isTypingData && (
+                  <TypingIndicator
+                    content={`${selectedReceiver?.name} is typing`}
+                  />
+                )
+              }
+            >
               {chats.map((chat) => {
                 return (
                   <>
@@ -253,11 +261,7 @@ export default function PublicChat() {
                 );
               })}
             </MessageList>
-            {isTypingData && (
-              <TypingIndicator
-                content={`${selectedReceiver?.name} is typing`}
-              />
-            )}
+
             <MessageInput
               placeholder="Type message here"
               onChange={(text) => {
