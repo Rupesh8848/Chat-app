@@ -53,9 +53,10 @@ const registerNewUser = async (req, res) => {
       id: snapshot.data().count + 1,
     });
 
-    console.log(await response.get());
+    const newDispatcherData = (await response.get()).data();
+    console.log(newDispatcherData);
 
-    pusherServer.trigger("notification", "new-dispatcher", {});
+    pusherServer.trigger("notification", "new-dispatcher", newDispatcherData);
 
     return res.json({
       success: true,

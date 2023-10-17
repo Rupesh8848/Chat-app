@@ -31,11 +31,9 @@ export default function Landing({
             >
               Login
             </button>
-            <Link to="/new-user">
-              <label className="text-xs font-semibold-light mt-2 cursor-pointer underline">
-                Create New Dispatcher?
-              </label>
-            </Link>
+            <label className="text-xs font-semibold-light mt-2 cursor-pointer underline">
+              <Link to="/new-user">Create New Dispatcher?</Link>
+            </label>
           </div>
         </div>
       </div>

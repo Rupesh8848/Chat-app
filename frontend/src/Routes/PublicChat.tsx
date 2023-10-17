@@ -52,8 +52,12 @@ type MessageNotificationStateType = {
 };
 
 export default function PublicChat() {
+  const location = useLocation();
   const [chats, setChats] = React.useState<Array<ChatUpdateDataType>>([]);
   const [message, setMessage] = React.useState("");
+  const [dispachersData, setDispatcherData] = React.useState(
+    location.state.dispachersData
+  );
 
   const [messageNotification, setMessageNotification] =
     React.useState<MessageNotificationStateType>({ seen: true });
@@ -66,16 +70,20 @@ export default function PublicChat() {
     senderName: string;
   }>({ message: "", isTyping: false, senderName: "" });
 
-  const location = useLocation();
-
   const {
     userData,
-    dispachersData,
   }: { userData: UserData; dispachersData: Array<Dispatcher> } = location.state;
   console.log(userData);
 
   React.useEffect(() => {
     const publicChannel = pusherClient.subscribe("notification");
+
+    publicChannel.bind("new-dispatcher", (data: Dispatcher) => {
+      setDispatcherData((oldDispatcherData: Array<Dispatcher>) => [
+        ...oldDispatcherData,
+        data,
+      ]);
+    });
 
     publicChannel.bind("message-notification", (data: MessageNotification) => {
       if (data.receiverUserName === userData.name) {
@@ -136,7 +144,8 @@ export default function PublicChat() {
       channel.bind(
         "is-typing",
         (data: { message: string; senderUserName: string }) => {
-          // if (data.reciverName !== userData.name) return;
+          console.log("Is typing event received");
+          console.log(data);
           setIsTypingData({
             message: data.message,
             isTyping: true,

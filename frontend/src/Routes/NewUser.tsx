@@ -44,11 +44,9 @@ const NewUser = () => {
           >
             Add
           </button>
-          <Link to="/">
-            <label className="text-xs font-semibold-light mt-2 underline cursor-pointer">
-              Already a member?
-            </label>
-          </Link>
+          <label className="text-xs font-semibold-light mt-2 underline cursor-pointer">
+            <Link to="/">Already a member?</Link>
+          </label>
         </div>
       </div>
     </div>
