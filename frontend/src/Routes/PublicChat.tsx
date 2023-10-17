@@ -20,6 +20,7 @@ import {
   VoiceCallButton,
   VideoCallButton,
   InfoButton,
+  TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
 
 type ChatUpdateDataType = {
@@ -250,7 +251,16 @@ export default function PublicChat() {
                 </ConversationHeader.Actions>
               </ConversationHeader>
             )}
-            <MessageList>
+            <MessageList
+              typingIndicator={
+                isTypingData.isTyping &&
+                userData.name !== isTypingData.senderName && (
+                  <TypingIndicator
+                    content={`${selectedReceiver?.name} is typing: ${isTypingData.message}`}
+                  />
+                )
+              }
+            >
               {chats.map((chat) => {
                 return (
                   <>
