@@ -13,10 +13,10 @@ export default function Landing({
     <>
       <div className="container mx-auto h-screen flex flex-col justify-center items-center ">
         <div
-          className="border-2 border-gray-400 shadow-lg rounded-lg p-4 mb-8"
+          className="border-2 border-gray-400 shadow-lg rounded-lg p-8 mb-8"
           style={{ backgroundColor: "#FFE5B4" }}
         >
-          <h1 className=" text-4xl font-semibold mb-4">Chat-Rat</h1>
+          <h1 className=" text-4xl font-semibold mb-4">Login into Chat-Rat</h1>
           <div className="flex flex-col ">
             <label className="text-lg mb-2">Enter your username:</label>
             <input

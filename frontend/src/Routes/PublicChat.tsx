@@ -211,12 +211,12 @@ export default function PublicChat() {
   return (
     <div className="h-[100vh] w-full flex justify-center items-center">
       <div className="h-[80%] w-[90%]">
-        <FileUploader
+        {/* <FileUploader
           multiple={true}
           handleChange={handleFileUpload}
           types={fileTypes}
-          name="file"
-        />
+          name={file}
+        /> */}
         <MainContainer responsive>
           <Sidebar position="left" scrollable={true}>
             <ConversationList>
