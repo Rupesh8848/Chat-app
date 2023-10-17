@@ -25,3 +25,4 @@ dist-ssr
 .env
 
 keys.json
+firebase.ts
