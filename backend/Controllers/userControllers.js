@@ -27,6 +27,7 @@ const userLogin = async (req, res) => {
 };
 
 const registerNewUser = async (req, res) => {
+  console.log("New dispathcer route hit");
   const { userName } = req.body;
 
   try {
@@ -34,24 +35,24 @@ const registerNewUser = async (req, res) => {
 
     const snapshot = await dispatchersCollectionRef.count().get();
 
-    const res = await dispatchersCollectionRef.add({
+    const response = await dispatchersCollectionRef.add({
       name: userName,
       channels: [],
       id: snapshot.data().count + 1,
     });
 
-    console.log(res.get());
+    console.log(await response.get());
 
     pusherServer.trigger("notification", "new-dispatcher", {});
 
-    return res.status(201).json({
+    return res.json({
       success: true,
       message:
         "Dispatcher successfully created. \nYou'll be redirected shortly",
     });
   } catch (error) {
     console.log(error);
-    return res.status(400).json({
+    return res.json({
       success: false,
       message: "Some error occured while creating a new dispatcher",
     });

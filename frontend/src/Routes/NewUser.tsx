@@ -14,7 +14,7 @@ const NewUser = () => {
     const res = await axios.post("http://localhost:8000/api/user/new-user", {
       userName: input,
     });
-    if (res.status === 201) {
+    if (res.data.success) {
       toast.success(res.data.message);
       setTimeout(() => {
         navigation("/");

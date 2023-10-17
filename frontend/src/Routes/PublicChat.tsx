@@ -287,6 +287,7 @@ export default function PublicChat() {
                 placeholder="Type message here"
                 onChange={(text) => {
                   setMessage(text);
+                  isTypingHandler();
                 }}
                 value={message}
                 onSend={() => {
