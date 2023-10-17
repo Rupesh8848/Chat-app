@@ -6,6 +6,8 @@ import Chat from "./Routes/Chat";
 import PublicChat from "./Routes/PublicChat";
 import SelectChannel from "./Routes/SelectChannel";
 import axios from "axios";
+import NewUser from "./Routes/NewUser";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   const [userName, setUserName] = React.useState<null | string>(null);
@@ -57,7 +59,9 @@ function App() {
         />
         <Route path="chat" element={<Chat />} />
         <Route path="public-chat" element={<PublicChat />} />
+        <Route path="new-user" element={<NewUser />} />
       </Routes>
+      <Toaster />
     </>
   );
 }

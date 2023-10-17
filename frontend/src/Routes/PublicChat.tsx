@@ -15,7 +15,11 @@ import {
   Sidebar,
   ConversationList,
   Conversation,
-  TypingIndicator,
+  ConversationHeader,
+  StarButton,
+  VoiceCallButton,
+  VideoCallButton,
+  InfoButton,
 } from "@chatscope/chat-ui-kit-react";
 
 type ChatUpdateDataType = {
@@ -232,16 +236,22 @@ export default function PublicChat() {
             </ConversationList>
           </Sidebar>
           <ChatContainer>
-            <MessageList
-              typingIndicator={
-                isTypingData.isTyping &&
-                userData.name !== isTypingData.senderName && (
-                  <TypingIndicator
-                    content={`${selectedReceiver?.name} is typing: ${isTypingData.message}`}
-                  />
-                )
-              }
-            >
+            {selectedReceiver?.name && (
+              <ConversationHeader>
+                <Avatar
+                  src="https://media.npr.org/assets/img/2017/09/12/macaca_nigra_self-portrait-3e0070aa19a7fe36e802253048411a38f14a79f8.jpg"
+                  name={selectedReceiver?.name}
+                />
+                <ConversationHeader.Content userName={selectedReceiver?.name} />
+                <ConversationHeader.Actions>
+                  <StarButton title="Add to favourites" />
+                  <VoiceCallButton title="Start voice call" />
+                  <VideoCallButton title="Start video call" />
+                  <InfoButton title="Show info" />
+                </ConversationHeader.Actions>
+              </ConversationHeader>
+            )}
+            <MessageList>
               {chats.map((chat) => {
                 return (
                   <>
@@ -272,21 +282,21 @@ export default function PublicChat() {
                 );
               })}
             </MessageList>
-
-            <MessageInput
-              placeholder="Type message here"
-              onChange={(text) => {
-                setMessage(text);
-                isTypingHandler();
-              }}
-              value={message}
-              onSend={() => {
-                if (message.length > 0) {
-                  submitMessage();
-                  setMessage("");
-                }
-              }}
-            />
+            {selectedReceiver?.name && (
+              <MessageInput
+                placeholder="Type message here"
+                onChange={(text) => {
+                  setMessage(text);
+                }}
+                value={message}
+                onSend={() => {
+                  if (message.length > 0) {
+                    submitMessage();
+                    setMessage("");
+                  }
+                }}
+              />
+            )}
           </ChatContainer>
         </MainContainer>
       </div>
