@@ -1,4 +1,5 @@
 const { firestoreDB } = require("../lib/firestore");
+const { pusherServer } = require("../lib/pusher");
 
 const userLogin = async (req, res) => {
   const { dispatcherName } = req.body;
@@ -25,4 +26,36 @@ const userLogin = async (req, res) => {
     .json({ userData: snapshot.docs[0].data(), dispatchersData });
 };
 
-module.exports = { userLogin };
+const registerNewUser = async (req, res) => {
+  const { userName } = req.body;
+
+  try {
+    const dispatchersCollectionRef = firestoreDB.collection("dispatchers");
+
+    const snapshot = await dispatchersCollectionRef.count().get();
+
+    const res = await dispatchersCollectionRef.add({
+      name: userName,
+      channels: [],
+      id: snapshot.data().count + 1,
+    });
+
+    console.log(res.get());
+
+    pusherServer.trigger("notification", "new-dispatcher", {});
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "Dispatcher successfully created. \nYou'll be redirected shortly",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      success: false,
+      message: "Some error occured while creating a new dispatcher",
+    });
+  }
+};
+
+module.exports = { userLogin, registerNewUser };
