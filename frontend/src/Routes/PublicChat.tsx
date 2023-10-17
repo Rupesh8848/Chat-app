@@ -21,7 +21,9 @@ import {
   VideoCallButton,
   InfoButton,
   TypingIndicator,
+  Status,
 } from "@chatscope/chat-ui-kit-react";
+import WatchlistFacade from "pusher-js/types/src/core/watchlist";
 
 type ChatUpdateDataType = {
   message: string;
@@ -58,6 +60,9 @@ export default function PublicChat() {
   const [dispachersData, setDispatcherData] = React.useState(
     location.state.dispachersData
   );
+  const [onlineDispatchers, setOnlineDispatchers] = React.useState<
+    Array<string>
+  >([]);
 
   const [messageNotification, setMessageNotification] =
     React.useState<MessageNotificationStateType>({ seen: true });
@@ -73,6 +78,25 @@ export default function PublicChat() {
   const {
     userData,
   }: { userData: UserData; dispachersData: Array<Dispatcher> } = location.state;
+
+  const watchlistEventHandler = (event) => {
+    console.log("Watch list event fired");
+    console.log(event);
+    if (event.name === "online") {
+      setOnlineDispatchers(event.user_ids);
+    }
+    if (event.name === "offline") {
+      setOnlineDispatchers((oldData) =>
+        oldData.filter((dispatcherId) => !event.user_ids.includes(dispatcherId))
+      );
+    }
+  };
+
+  React.useEffect(() => {
+    pusherClient.signin();
+    pusherClient.user.watchlist.bind("online", watchlistEventHandler);
+    pusherClient.user.watchlist.bind("offline", watchlistEventHandler);
+  }, []);
 
   React.useEffect(() => {
     const publicChannel = pusherClient.subscribe("notification");
@@ -249,6 +273,13 @@ export default function PublicChat() {
                     <Conversation.Content
                       name={dispatcher.name}
                       // lastSenderName="Lilly"
+                    />
+                    <Avatar
+                      status={
+                        onlineDispatchers.includes(`${dispatcher.id}`)
+                          ? "available"
+                          : "unavailable"
+                      }
                     />
                   </Conversation>
                 );
