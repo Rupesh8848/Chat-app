@@ -1,9 +1,14 @@
+const { firestoreDB } = require("../lib/firestore");
 const { pusherServer } = require("../lib/pusher");
 
 const pusherUserAuth = async (req, res) => {
   console.log("Pusher auth hit", req.session.user);
   const { socket_id, channel_name } = req.body;
   const randomString = Math.random().toString(36).slice(2);
+
+  // const collectionRef = firestoreDB.collection("disptachers");
+
+  // const snapshot = collectionRef.where("name","==",)
 
   const presenceData = {
     id: randomString,

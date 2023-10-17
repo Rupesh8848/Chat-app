@@ -32,6 +32,7 @@ type Dispatcher = {
   name: string;
   id: number;
   channels: Array<string>;
+  profilePic: string;
 };
 
 type UserData = Dispatcher;
@@ -52,10 +53,17 @@ type MessageNotificationStateType = {
 };
 
 export default function PublicChat() {
+  const location = useLocation();
   const [chats, setChats] = React.useState<Array<ChatUpdateDataType>>([]);
   const [message, setMessage] = React.useState("");
   const [file, setFile] = React.useState(null);
   const fileTypes = ["JPG", "PNG", "GIF"];
+  const [dispachersData, setDispatcherData] = React.useState(
+    location.state.dispachersData
+  );
+  const [onlineDispatchers, setOnlineDispatchers] = React.useState<
+    Array<string>
+  >([]);
 
   const [messageNotification, setMessageNotification] =
     React.useState<MessageNotificationStateType>({ seen: true });
@@ -68,30 +76,47 @@ export default function PublicChat() {
     senderName: string;
   }>({ message: "", isTyping: false, senderName: "" });
 
-  const location = useLocation();
-
   const {
     userData,
-    dispachersData,
   }: { userData: UserData; dispachersData: Array<Dispatcher> } = location.state;
-  console.log(userData);
+
+  const watchlistEventHandler = (event) => {
+    if (event.name === "online") {
+      setOnlineDispatchers(event.user_ids);
+    }
+    if (event.name === "offline") {
+      setOnlineDispatchers((oldData) =>
+        oldData.filter((dispatcherId) => !event.user_ids.includes(dispatcherId))
+      );
+    }
+  };
+
+  React.useEffect(() => {
+    pusherClient.signin();
+    pusherClient.user.watchlist.bind("online", watchlistEventHandler);
+    pusherClient.user.watchlist.bind("offline", watchlistEventHandler);
+  }, []);
 
   React.useEffect(() => {
     const publicChannel = pusherClient.subscribe("notification");
 
+    publicChannel.bind("new-dispatcher", (data: Dispatcher) => {
+      setDispatcherData((oldDispatcherData: Array<Dispatcher>) => [
+        ...oldDispatcherData,
+        data,
+      ]);
+    });
+
     publicChannel.bind("message-notification", (data: MessageNotification) => {
       if (data.receiverUserName === userData.name) {
         const channel = pusherClient.subscribe(data.channelName);
-        channel.bind("pusher:subscription_succeeded", () => {
-          console.log("Subscribed to channel: ", channel);
-        });
+        channel.bind("pusher:subscription_succeeded", () => {});
 
         channel.bind("pusher:subscription_error", (error) => {
           console.log("Couldn't subscribe", error);
         });
 
         channel.bind("chat-update", (data: ChatUpdateDataType) => {
-          console.log("Inside chat update: ", data);
           const { message, userName } = data;
 
           setChats((oldChats) => {
@@ -108,6 +133,23 @@ export default function PublicChat() {
             }
           });
         });
+
+        channel.bind(
+          "is-typing",
+          (data: { message: string; senderUserName: string }) => {
+            console.log("Is typing event received");
+            console.log(data);
+            setIsTypingData({
+              message: data.message,
+              isTyping: true,
+              senderName: data.senderUserName,
+            });
+            setTimeout(() => {
+              setIsTypingData({ message: "", isTyping: false, senderName: "" });
+            }, 2000);
+          }
+        );
+
         setMessageNotification({ ...data, seen: false });
       }
     });
@@ -115,9 +157,7 @@ export default function PublicChat() {
     userData.channels.forEach((channelToSubscribe) => {
       const channel = pusherClient.subscribe(channelToSubscribe);
 
-      channel.bind("pusher:subscription_succeeded", () => {
-        console.log("Subscribed to channel: ", channel);
-      });
+      channel.bind("pusher:subscription_succeeded", () => {});
 
       channel.bind("pusher:subscription_error", (error) => {
         console.log("Couldn't subscribe", error);
@@ -138,7 +178,8 @@ export default function PublicChat() {
       channel.bind(
         "is-typing",
         (data: { message: string; senderUserName: string }) => {
-          // if (data.reciverName !== userData.name) return;
+          console.log("Is typing event received");
+          console.log(data);
           setIsTypingData({
             message: data.message,
             isTyping: true,
@@ -175,6 +216,7 @@ export default function PublicChat() {
   const submitMessage = async () => {
     console.log(selectedReceiver);
     if (!selectedReceiver) return;
+    setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
     await axios.post("http://localhost:8000/api/message/public", {
       userName: userData.name,
       message,
@@ -200,6 +242,7 @@ export default function PublicChat() {
   };
 
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
+    setChats([]);
     setMessageNotification((oldData) => ({ ...oldData, seen: true }));
     setSelectedReceiver(selectedDispatcher);
   };
@@ -237,10 +280,21 @@ export default function PublicChat() {
                     }`}
                     onClick={() => handleConversationClick(dispatcher)}
                   >
-                    {/* <Avatar name={dispatcher.name} status="available" /> */}
+                    <Avatar
+                      name={dispatcher.name}
+                      status="available"
+                      src={dispatcher.profilePic}
+                    />
                     <Conversation.Content
                       name={dispatcher.name}
                       // lastSenderName="Lilly"
+                    />
+                    <Avatar
+                      status={
+                        onlineDispatchers.includes(`${dispatcher.id}`)
+                          ? "available"
+                          : "unavailable"
+                      }
                     />
                   </Conversation>
                 );
@@ -297,7 +351,7 @@ export default function PublicChat() {
                     >
                       <Avatar
                         name={chat.userName}
-                        src="https://media.npr.org/assets/img/2017/09/12/macaca_nigra_self-portrait-3e0070aa19a7fe36e802253048411a38f14a79f8.jpg"
+                        src={selectedReceiver?.profilePic}
                       />
                     </Message>
                   </>

@@ -22,9 +22,12 @@ function App() {
         dispatcherName: userName,
       }
     );
-    console.log(response.data);
     if (response.status === 200) {
       localStorage.setItem("userData", JSON.stringify(response.data.userData));
+      const dispatchersData = response.data.dispatchersData.map(
+        (dispatcher: { id: number }) => `${dispatcher.id}`
+      );
+      localStorage.setItem("dispatchersData", JSON.stringify(dispatchersData));
       navigate("public-chat", {
         state: {
           userData: response.data.userData,

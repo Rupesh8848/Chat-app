@@ -31,17 +31,46 @@ app.use("/api/message", messageRoute);
 app.use("/api/user", userRoute);
 app.use("/api/typing-status", isTypingRoute);
 
-app.post("/pusher/auth", (request, response) => {
-  const socketId = request.body.socket_id;
-  const channel = request.body.channel_name;
-  const userName = request.body.userName;
+app.post("/pusher/user-auth", (request, response) => {
+  console.log("Pusher user auth hit");
+  try {
+    const socketId = request.body.socket_id;
+    const id = request.body.id;
+    const dispatchersData = JSON.parse(request.body.dispatchersData);
 
-  const presenceData = {
-    user_id: `${userName}`,
-  };
-  const auth = pusherServer.authorizeChannel(socketId, channel, presenceData);
+    const presenceData = {
+      id,
+      watchlist: dispatchersData,
+    };
+    const auth = pusherServer.authenticateUser(socketId, presenceData);
 
-  return response.send(auth);
+    return response.send(auth);
+  } catch (error) {
+    console.log(error);
+    return response
+      .status(400)
+      .send("There was some error authenticating user.");
+  }
+});
+
+app.post("/pusher/auth", async (request, response) => {
+  try {
+    const socketId = request.body.socket_id;
+    const channel = request.body.channel_name;
+    const id = request.body.id;
+
+    const presenceData = {
+      user_id: `${id}`,
+    };
+    const auth = pusherServer.authorizeChannel(socketId, channel, presenceData);
+
+    return response.send(auth);
+  } catch (error) {
+    console.log(error);
+    return response
+      .status(400)
+      .send("There was some error authenticating user.");
+  }
 });
 
 app.listen(8000, () => {
