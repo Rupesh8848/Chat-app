@@ -73,7 +73,6 @@ export default function PublicChat() {
   const {
     userData,
   }: { userData: UserData; dispachersData: Array<Dispatcher> } = location.state;
-  console.log(userData);
 
   React.useEffect(() => {
     const publicChannel = pusherClient.subscribe("notification");
@@ -88,16 +87,13 @@ export default function PublicChat() {
     publicChannel.bind("message-notification", (data: MessageNotification) => {
       if (data.receiverUserName === userData.name) {
         const channel = pusherClient.subscribe(data.channelName);
-        channel.bind("pusher:subscription_succeeded", () => {
-          console.log("Subscribed to channel: ", channel);
-        });
+        channel.bind("pusher:subscription_succeeded", () => {});
 
         channel.bind("pusher:subscription_error", (error) => {
           console.log("Couldn't subscribe", error);
         });
 
         channel.bind("chat-update", (data: ChatUpdateDataType) => {
-          console.log("Inside chat update: ", data);
           const { message, userName } = data;
 
           setChats((oldChats) => {
@@ -114,6 +110,23 @@ export default function PublicChat() {
             }
           });
         });
+
+        channel.bind(
+          "is-typing",
+          (data: { message: string; senderUserName: string }) => {
+            console.log("Is typing event received");
+            console.log(data);
+            setIsTypingData({
+              message: data.message,
+              isTyping: true,
+              senderName: data.senderUserName,
+            });
+            setTimeout(() => {
+              setIsTypingData({ message: "", isTyping: false, senderName: "" });
+            }, 2000);
+          }
+        );
+
         setMessageNotification({ ...data, seen: false });
       }
     });
@@ -121,9 +134,7 @@ export default function PublicChat() {
     userData.channels.forEach((channelToSubscribe) => {
       const channel = pusherClient.subscribe(channelToSubscribe);
 
-      channel.bind("pusher:subscription_succeeded", () => {
-        console.log("Subscribed to channel: ", channel);
-      });
+      channel.bind("pusher:subscription_succeeded", () => {});
 
       channel.bind("pusher:subscription_error", (error) => {
         console.log("Couldn't subscribe", error);
