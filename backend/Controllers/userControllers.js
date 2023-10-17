@@ -35,6 +35,18 @@ const registerNewUser = async (req, res) => {
 
     const snapshot = await dispatchersCollectionRef.count().get();
 
+    const dataSnapshot = await dispatchersCollectionRef
+      .where("name", "==", userName)
+      .get();
+
+    if (!dataSnapshot.empty) {
+      return res.json({
+        success: false,
+        message:
+          "Dispatcher with given name already exists.\nPlease try new name.",
+      });
+    }
+
     const response = await dispatchersCollectionRef.add({
       name: userName,
       channels: [],
