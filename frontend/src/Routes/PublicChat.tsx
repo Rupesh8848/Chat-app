@@ -57,7 +57,8 @@ export default function PublicChat() {
   const [isTypingData, setIsTypingData] = React.useState<{
     message: string;
     isTyping: boolean;
-  }>({ message: "", isTyping: false });
+    senderName: string;
+  }>({ message: "", isTyping: false, senderName: "" });
 
   const location = useLocation();
 
@@ -126,14 +127,21 @@ export default function PublicChat() {
         ]);
       });
 
-      channel.bind("is-typing", (data) => {
-        // if (data.reciverName !== userData.name) return;
-        console.log("Typing event received");
-        setIsTypingData({ message: data.message, isTyping: true });
-        setTimeout(() => {
-          setIsTypingData({ message: "", isTyping: false });
-        }, 2000);
-      });
+      channel.bind(
+        "is-typing",
+        (data: { message: string; senderUserName: string }) => {
+          // if (data.reciverName !== userData.name) return;
+          console.log("Typing event received");
+          setIsTypingData({
+            message: data.message,
+            isTyping: true,
+            senderName: data.senderUserName,
+          });
+          setTimeout(() => {
+            setIsTypingData({ message: "", isTyping: false, senderName: "" });
+          }, 2000);
+        }
+      );
     });
 
     return () => {
@@ -228,7 +236,8 @@ export default function PublicChat() {
           <ChatContainer>
             <MessageList
               typingIndicator={
-                isTypingData.isTyping && (
+                isTypingData.isTyping &&
+                userData.name !== isTypingData.senderName && (
                   <TypingIndicator
                     content={`${selectedReceiver?.name} is typing: ${isTypingData.message}`}
                   />
