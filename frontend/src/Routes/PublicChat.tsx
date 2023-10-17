@@ -198,7 +198,6 @@ export default function PublicChat() {
 
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
     setMessageNotification((oldData) => ({ ...oldData, seen: true }));
-    console.log(selectedDispatcher);
     setSelectedReceiver(selectedDispatcher);
   };
 
