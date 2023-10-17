@@ -2,25 +2,48 @@ import { Link, useNavigate } from "react-router-dom";
 import React from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { FileUploader } from "react-drag-drop-files";
 
 const NewUser = () => {
   const [input, setInput] = React.useState("");
+  const [file, setFile] = React.useState(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [fileError, setFileError] = React.useState<string | null>(null);
+
+  const fileTypes = ["JPG", "PNG", "GIF"];
   const navigation = useNavigate();
   const handleChange = (e) => {
     setInput(e.target.value);
+    setError(null);
+  };
+
+  const handleFileUpload = (file) => {
+    setFile(file);
+    setFileError(null);
   };
 
   const handleCreate = async () => {
-    const res = await axios.post("http://localhost:8000/api/user/new-user", {
-      userName: input,
-    });
-    if (res.data.success) {
-      toast.success(res.data.message);
-      setTimeout(() => {
-        navigation("/");
-      }, 2000);
-    } else {
-      toast.error(res.data.message);
+    if ((input || input.trim().length > 0) && file) {
+      const res = await axios.post("http://localhost:8000/api/user/new-user", {
+        userName: input,
+      });
+      if (res.data.success) {
+        toast.success(res.data.message);
+        setTimeout(() => {
+          navigation("/");
+        }, 2000);
+      } else {
+        toast.error(res.data.message);
+      }
+    }
+    if (!input) {
+      setError("Username is required");
+      return;
+    }
+
+    if (!file) {
+      setFileError("Please upload your profile picture.");
+      return;
     }
   };
   return (
@@ -37,7 +60,21 @@ const NewUser = () => {
             className="border-2 border-black px-4 py-2 rounded-lg mb-4"
             onChange={handleChange}
             value={input}
+            required
           />
+          {error && <p className="text-red-500">{error}</p>}
+          <div className="mb-2">
+            <label className="text-lg mb-2">Profile Picture:</label>
+            {/* <input type="file" className="mb-2" accept="image/*" required /> */}
+            <FileUploader
+              multiple={true}
+              handleChange={handleFileUpload}
+              types={fileTypes}
+              name="file"
+            />
+          </div>
+          {fileError && <p className="text-red-500">{fileError}</p>}
+
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded-lg"
             onClick={handleCreate}

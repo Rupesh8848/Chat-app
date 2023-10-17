@@ -3,7 +3,7 @@ import React from "react";
 import axios from "axios";
 import { pusherClient } from "../lib/pusher";
 import { useLocation } from "react-router-dom";
-import { DebounceInput } from "react-debounce-input";
+import { FileUploader } from "react-drag-drop-files";
 
 import {
   MainContainer,
@@ -54,6 +54,8 @@ type MessageNotificationStateType = {
 export default function PublicChat() {
   const [chats, setChats] = React.useState<Array<ChatUpdateDataType>>([]);
   const [message, setMessage] = React.useState("");
+  const [file, setFile] = React.useState(null);
+  const fileTypes = ["JPG", "PNG", "GIF"];
 
   const [messageNotification, setMessageNotification] =
     React.useState<MessageNotificationStateType>({ seen: true });
@@ -202,9 +204,19 @@ export default function PublicChat() {
     setSelectedReceiver(selectedDispatcher);
   };
 
+  const handleFileUpload = (file) => {
+    setFile(file);
+  };
+
   return (
     <div className="h-[100vh] w-full flex justify-center items-center">
       <div className="h-[80%] w-[90%]">
+        <FileUploader
+          multiple={true}
+          handleChange={handleFileUpload}
+          types={fileTypes}
+          name="file"
+        />
         <MainContainer responsive>
           <Sidebar position="left" scrollable={true}>
             <ConversationList>
@@ -251,6 +263,7 @@ export default function PublicChat() {
                 </ConversationHeader.Actions>
               </ConversationHeader>
             )}
+
             <MessageList
               typingIndicator={
                 isTypingData.isTyping &&
@@ -291,6 +304,7 @@ export default function PublicChat() {
                 );
               })}
             </MessageList>
+
             {selectedReceiver?.name && (
               <MessageInput
                 placeholder="Type message here"
