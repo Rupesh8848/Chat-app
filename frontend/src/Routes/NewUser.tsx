@@ -1,6 +1,28 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import React from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const NewUser = () => {
+  const [input, setInput] = React.useState("");
+  const navigation = useNavigate();
+  const handleChange = (e) => {
+    setInput(e.target.value);
+  };
+
+  const handleCreate = async () => {
+    const res = await axios.post("http://localhost:8000/api/user/new-user", {
+      userName: input,
+    });
+    if (res.status === 201) {
+      toast.success(res.data.message);
+      setTimeout(() => {
+        navigation("/");
+      }, 2000);
+    } else {
+      toast.error(res.data.message);
+    }
+  };
   return (
     <div className="container mx-auto h-screen flex flex-col justify-center items-center ">
       <div
@@ -13,12 +35,12 @@ const NewUser = () => {
           <input
             type="text"
             className="border-2 border-black px-4 py-2 rounded-lg mb-4"
-            // onChange={handleChange}
-            // value={userName || ""}
+            onChange={handleChange}
+            value={input}
           />
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-            // onClick={handleLogin}
+            onClick={handleCreate}
           >
             Add
           </button>
