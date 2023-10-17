@@ -3,6 +3,7 @@ import React from "react";
 import axios from "axios";
 import { pusherClient } from "../lib/pusher";
 import { useLocation } from "react-router-dom";
+import { DebounceInput } from "react-debounce-input";
 
 import {
   MainContainer,
@@ -131,7 +132,6 @@ export default function PublicChat() {
         "is-typing",
         (data: { message: string; senderUserName: string }) => {
           // if (data.reciverName !== userData.name) return;
-          console.log("Typing event received");
           setIsTypingData({
             message: data.message,
             isTyping: true,
@@ -152,14 +152,12 @@ export default function PublicChat() {
   }, []);
 
   React.useEffect(() => {
-    console.log("Selected receiver changed");
     async function fetchNewMesg() {
       const response = await axios.get(
         `http://localhost:8000/api/message/${userData.name}/${selectedReceiver?.name}`
       );
 
       setChats(response.data);
-      console.log(response.data);
     }
 
     if (selectedReceiver) {
