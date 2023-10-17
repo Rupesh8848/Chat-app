@@ -28,7 +28,7 @@ const userLogin = async (req, res) => {
 
 const registerNewUser = async (req, res) => {
   console.log("New dispathcer route hit");
-  const { userName } = req.body;
+  const { userName, profilePic } = req.body;
 
   try {
     const dispatchersCollectionRef = firestoreDB.collection("dispatchers");
@@ -51,6 +51,7 @@ const registerNewUser = async (req, res) => {
       name: userName,
       channels: [],
       id: snapshot.data().count + 1,
+      profilePic,
     });
 
     const newDispatcherData = (await response.get()).data();

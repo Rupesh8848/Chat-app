@@ -21,9 +21,7 @@ import {
   VideoCallButton,
   InfoButton,
   TypingIndicator,
-  Status,
 } from "@chatscope/chat-ui-kit-react";
-import WatchlistFacade from "pusher-js/types/src/core/watchlist";
 
 type ChatUpdateDataType = {
   message: string;
@@ -34,6 +32,7 @@ type Dispatcher = {
   name: string;
   id: number;
   channels: Array<string>;
+  profilePic: string;
 };
 
 type UserData = Dispatcher;
@@ -80,8 +79,6 @@ export default function PublicChat() {
   }: { userData: UserData; dispachersData: Array<Dispatcher> } = location.state;
 
   const watchlistEventHandler = (event) => {
-    console.log("Watch list event fired");
-    console.log(event);
     if (event.name === "online") {
       setOnlineDispatchers(event.user_ids);
     }
@@ -217,6 +214,7 @@ export default function PublicChat() {
   const submitMessage = async () => {
     console.log(selectedReceiver);
     if (!selectedReceiver) return;
+    setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
     await axios.post("http://localhost:8000/api/message/public", {
       userName: userData.name,
       message,
@@ -242,6 +240,7 @@ export default function PublicChat() {
   };
 
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
+    setChats([]);
     setMessageNotification((oldData) => ({ ...oldData, seen: true }));
     setSelectedReceiver(selectedDispatcher);
   };
@@ -269,7 +268,11 @@ export default function PublicChat() {
                     }`}
                     onClick={() => handleConversationClick(dispatcher)}
                   >
-                    {/* <Avatar name={dispatcher.name} status="available" /> */}
+                    <Avatar
+                      name={dispatcher.name}
+                      status="available"
+                      src={dispatcher.profilePic}
+                    />
                     <Conversation.Content
                       name={dispatcher.name}
                       // lastSenderName="Lilly"
@@ -335,7 +338,7 @@ export default function PublicChat() {
                     >
                       <Avatar
                         name={chat.userName}
-                        src="https://media.npr.org/assets/img/2017/09/12/macaca_nigra_self-portrait-3e0070aa19a7fe36e802253048411a38f14a79f8.jpg"
+                        src={selectedReceiver?.profilePic}
                       />
                     </Message>
                   </>
