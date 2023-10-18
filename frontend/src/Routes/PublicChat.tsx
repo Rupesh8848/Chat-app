@@ -110,6 +110,8 @@ export default function PublicChat() {
     publicChannel.bind("message-notification", (data: MessageNotification) => {
       if (data.receiverUserName === userData.name) {
         const channel = pusherClient.subscribe(data.channelName);
+        setMessageNotification({ ...data, seen: false });
+
         channel.bind("pusher:subscription_succeeded", () => {});
 
         channel.bind("pusher:subscription_error", (error) => {
@@ -120,7 +122,7 @@ export default function PublicChat() {
           const { message, userName } = data;
 
           setChats((oldChats) => {
-            if (messageNotification.senderUserName === selectedReceiver?.name) {
+            if (data.userName === selectedReceiver?.name) {
               return [
                 ...oldChats,
                 {
@@ -149,8 +151,6 @@ export default function PublicChat() {
             }, 2000);
           }
         );
-
-        setMessageNotification({ ...data, seen: false });
       }
     });
 
@@ -166,13 +166,15 @@ export default function PublicChat() {
       channel.bind("chat-update", (data: ChatUpdateDataType) => {
         console.log("Inside chat update: ", data);
         const { message, userName } = data;
-        setChats((oldChats) => [
-          ...oldChats,
-          {
-            message,
-            userName,
-          },
-        ]);
+        setChats((oldChats) => {
+          return [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ];
+        });
       });
 
       channel.bind(
@@ -216,15 +218,55 @@ export default function PublicChat() {
   const submitMessage = async () => {
     console.log(selectedReceiver);
     if (!selectedReceiver) return;
-    setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
+    // setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
+
+    const channelName =
+      userData.name > selectedReceiver?.name
+        ? `presence-${selectedReceiver?.name}-${userData.name}`
+        : `presence-${userData.name}-${selectedReceiver?.name}`;
+
+    if (!userData.channels.includes(channelName)) {
+      const channel = pusherClient.subscribe(channelName);
+      channel.bind("chat-update", (data: ChatUpdateDataType) => {
+        console.log("Inside chat update: ", data);
+        const { message, userName } = data;
+        setChats((oldChats) => {
+          if (data.userName === selectedReceiver?.name) {
+            return [
+              ...oldChats,
+              {
+                message,
+                userName,
+              },
+            ];
+          } else {
+            return oldChats;
+          }
+        });
+      });
+
+      channel.bind(
+        "is-typing",
+        (data: { message: string; senderUserName: string }) => {
+          console.log("Is typing event received");
+          console.log(data);
+          setIsTypingData({
+            message: data.message,
+            isTyping: true,
+            senderName: data.senderUserName,
+          });
+          setTimeout(() => {
+            setIsTypingData({ message: "", isTyping: false, senderName: "" });
+          }, 2000);
+        }
+      );
+    }
+
     await axios.post("http://localhost:8000/api/message/public", {
       userName: userData.name,
       message,
       reciverName: selectedReceiver.name,
-      channel:
-        userData.name > selectedReceiver?.name
-          ? `presence-${selectedReceiver?.name}-${userData.name}`
-          : `presence-${userData.name}-${selectedReceiver?.name}`,
+      channel: channelName,
     });
   };
 
@@ -290,6 +332,7 @@ export default function PublicChat() {
                       // lastSenderName="Lilly"
                     />
                     <Avatar
+                      src={dispatcher.profilePic}
                       status={
                         onlineDispatchers.includes(`${dispatcher.id}`)
                           ? "available"
@@ -305,7 +348,7 @@ export default function PublicChat() {
             {selectedReceiver?.name && (
               <ConversationHeader>
                 <Avatar
-                  src="https://media.npr.org/assets/img/2017/09/12/macaca_nigra_self-portrait-3e0070aa19a7fe36e802253048411a38f14a79f8.jpg"
+                  src={selectedReceiver.profilePic}
                   name={selectedReceiver?.name}
                 />
                 <ConversationHeader.Content userName={selectedReceiver?.name} />
@@ -351,7 +394,11 @@ export default function PublicChat() {
                     >
                       <Avatar
                         name={chat.userName}
-                        src={selectedReceiver?.profilePic}
+                        src={
+                          chat.userName === userData.name
+                            ? userData?.profilePic
+                            : selectedReceiver?.profilePic
+                        }
                       />
                     </Message>
                   </>

@@ -37,18 +37,6 @@ const postPublicMessage = async (req, res) => {
 
     const userRef = firestoreDB.collection("dispatchers").doc(userDocId);
 
-    if (!userData.channels.includes(channel)) {
-      const updateRes = await userRef.update({
-        channels: firestore.FieldValue.arrayUnion(channel),
-      });
-      pusherServer.trigger("notification", "message-notification", {
-        receiverUserName: reciverName,
-        message: message,
-        senderUserName: userName,
-        channelName: channel,
-      });
-    }
-
     //for receiver
     const receiverSnapshot = await dispatchersRef
       .where("name", "==", reciverName)
@@ -79,13 +67,24 @@ const postPublicMessage = async (req, res) => {
       created: firestore.FieldValue.serverTimestamp(),
     });
 
+    if (!userData.channels.includes(channel)) {
+      const updateRes = await userRef.update({
+        channels: firestore.FieldValue.arrayUnion(channel),
+      });
+      pusherServer.trigger("notification", "message-notification", {
+        receiverUserName: reciverName,
+        message: message,
+        senderUserName: userName,
+        channelName: channel,
+      });
+    }
     // if document successfully added to db then emit event
     if (responseFromDB.id) {
       await pusherServer.trigger(channel, "chat-update", {
         message,
         userName,
       });
-      return res.json({ status: 200 });
+      return res.status(200);
     }
   } catch (error) {
     console.log(error);
