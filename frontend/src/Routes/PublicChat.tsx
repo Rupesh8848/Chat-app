@@ -76,9 +76,7 @@ export default function PublicChat() {
     senderName: string;
   }>({ message: "", isTyping: false, senderName: "" });
 
-  const {
-    userData,
-  }: { userData: UserData; dispachersData: Array<Dispatcher> } = location.state;
+  const { userData }: { userData: UserData } = location.state;
 
   const watchlistEventHandler = (event) => {
     if (event.name === "online") {
@@ -122,17 +120,13 @@ export default function PublicChat() {
           const { message, userName } = data;
 
           setChats((oldChats) => {
-            if (data.userName === selectedReceiver?.name) {
-              return [
-                ...oldChats,
-                {
-                  message,
-                  userName,
-                },
-              ];
-            } else {
-              return oldChats;
-            }
+            return [
+              ...oldChats,
+              {
+                message,
+                userName,
+              },
+            ];
           });
         });
 
@@ -284,10 +278,17 @@ export default function PublicChat() {
   };
 
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
+    if (selectedReceiver === selectedDispatcher) return;
     setChats([]);
     setMessageNotification((oldData) => ({ ...oldData, seen: true }));
     setSelectedReceiver(selectedDispatcher);
   };
+
+  React.useEffect(() => {
+    handleConversationClick(
+      dispachersData[0] !== userData ? dispachersData[0] : dispachersData[1]
+    );
+  }, []);
 
   const handleFileUpload = (file) => {
     setFile(file);
@@ -309,6 +310,7 @@ export default function PublicChat() {
                 if (dispatcher.name === userData.name) {
                   return;
                 }
+
                 return (
                   <Conversation
                     className={`${
