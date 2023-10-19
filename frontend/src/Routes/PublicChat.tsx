@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useRef } from "react";
 
 import axios from "axios";
 import { pusherClient } from "../lib/pusher";
-import { useLocation } from "react-router-dom";
-import { FileUploader } from "react-drag-drop-files";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  UploadTaskSnapshot,
+} from "firebase/storage";
 
 import {
   MainContainer,
@@ -21,7 +25,10 @@ import {
   VideoCallButton,
   InfoButton,
   TypingIndicator,
+  ExpansionPanel,
 } from "@chatscope/chat-ui-kit-react";
+import { storage } from "../firebase";
+import FileNameCard from "../Components/FileNameCard";
 
 type ChatUpdateDataType = {
   message: string;
@@ -52,14 +59,21 @@ type MessageNotificationStateType = {
   channelName?: string;
 };
 
+export type FileUploadProgressTrackerType = {
+  [key: string]: {
+    progress: number;
+    snapshot: UploadTaskSnapshot;
+  };
+};
+
 export default function PublicChat() {
-  const location = useLocation();
   const [chats, setChats] = React.useState<Array<ChatUpdateDataType>>([]);
   const [message, setMessage] = React.useState("");
-  const [file, setFile] = React.useState(null);
-  const fileTypes = ["JPG", "PNG", "GIF"];
-  const [dispachersData, setDispatcherData] = React.useState(
-    location.state.dispachersData
+  const [userData, setUserData] = React.useState<UserData>(
+    JSON.parse(localStorage.getItem("userData") || "")
+  );
+  const [dispachersData, setDispatcherData] = React.useState<Array<Dispatcher>>(
+    []
   );
   const [onlineDispatchers, setOnlineDispatchers] = React.useState<
     Array<string>
@@ -76,11 +90,9 @@ export default function PublicChat() {
     senderName: string;
   }>({ message: "", isTyping: false, senderName: "" });
 
-  const { userData }: { userData: UserData } = location.state;
-
   const watchlistEventHandler = (event) => {
     if (event.name === "online") {
-      setOnlineDispatchers(event.user_ids);
+      setOnlineDispatchers((oldIds) => [...oldIds, ...event.user_ids]);
     }
     if (event.name === "offline") {
       setOnlineDispatchers((oldData) =>
@@ -95,6 +107,17 @@ export default function PublicChat() {
     pusherClient.user.watchlist.bind("offline", watchlistEventHandler);
   }, []);
 
+  React.useLayoutEffect(() => {
+    async function getDispatchersList() {
+      const dispatchersData = await axios.get(
+        `http://localhost:8000/api/user/dispatchers/${userData.id}`
+      );
+
+      setDispatcherData(dispatchersData.data);
+    }
+    getDispatchersList();
+  }, []);
+
   React.useEffect(() => {
     const publicChannel = pusherClient.subscribe("notification");
 
@@ -106,15 +129,12 @@ export default function PublicChat() {
     });
 
     publicChannel.bind("message-notification", (data: MessageNotification) => {
-      if (data.receiverUserName === userData.name) {
+      if (
+        data.receiverUserName === userData.name ||
+        data.senderUserName === userData.name
+      ) {
         const channel = pusherClient.subscribe(data.channelName);
         setMessageNotification({ ...data, seen: false });
-
-        channel.bind("pusher:subscription_succeeded", () => {});
-
-        channel.bind("pusher:subscription_error", (error) => {
-          console.log("Couldn't subscribe", error);
-        });
 
         channel.bind("chat-update", (data: ChatUpdateDataType) => {
           const { message, userName } = data;
@@ -133,8 +153,6 @@ export default function PublicChat() {
         channel.bind(
           "is-typing",
           (data: { message: string; senderUserName: string }) => {
-            console.log("Is typing event received");
-            console.log(data);
             setIsTypingData({
               message: data.message,
               isTyping: true,
@@ -148,34 +166,32 @@ export default function PublicChat() {
       }
     });
 
+    return () => {
+      pusherClient.unsubscribe("notification");
+    };
+  }, []);
+
+  React.useEffect(() => {
     userData.channels.forEach((channelToSubscribe) => {
       const channel = pusherClient.subscribe(channelToSubscribe);
-
-      channel.bind("pusher:subscription_succeeded", () => {});
-
-      channel.bind("pusher:subscription_error", (error) => {
-        console.log("Couldn't subscribe", error);
-      });
 
       channel.bind("chat-update", (data: ChatUpdateDataType) => {
         console.log("Inside chat update: ", data);
         const { message, userName } = data;
-        setChats((oldChats) => {
-          return [
+        if (userName === selectedReceiver?.name && userName !== userData.name) {
+          setChats((oldChats) => [
             ...oldChats,
             {
               message,
               userName,
             },
-          ];
-        });
+          ]);
+        }
       });
 
       channel.bind(
         "is-typing",
         (data: { message: string; senderUserName: string }) => {
-          console.log("Is typing event received");
-          console.log(data);
           setIsTypingData({
             message: data.message,
             isTyping: true,
@@ -195,6 +211,7 @@ export default function PublicChat() {
     };
   }, []);
 
+  //fetch mesg according to selected dispatcher
   React.useEffect(() => {
     async function fetchNewMesg() {
       const response = await axios.get(
@@ -212,15 +229,24 @@ export default function PublicChat() {
   const submitMessage = async () => {
     console.log(selectedReceiver);
     if (!selectedReceiver) return;
-    // setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
-
+    setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
     const channelName =
       userData.name > selectedReceiver?.name
         ? `presence-${selectedReceiver?.name}-${userData.name}`
         : `presence-${userData.name}-${selectedReceiver?.name}`;
 
     if (!userData.channels.includes(channelName)) {
+      console.log("New channel created");
+      console.log(userData);
+      const channels = [...userData.channels, channelName];
+      setUserData((oldData) => ({
+        ...oldData,
+        channels,
+      }));
+      console.log(userData);
+      localStorage.setItem("userData", JSON.stringify(userData));
       const channel = pusherClient.subscribe(channelName);
+
       channel.bind("chat-update", (data: ChatUpdateDataType) => {
         console.log("Inside chat update: ", data);
         const { message, userName } = data;
@@ -266,15 +292,15 @@ export default function PublicChat() {
 
   const isTypingHandler = async () => {
     if (!selectedReceiver) return;
-    await axios.post("http://localhost:8000/api/typing-status/", {
-      userName: userData.name,
-      reciverName: selectedReceiver.name,
-      message,
-      channel:
-        userData.name > selectedReceiver?.name
-          ? `presence-${selectedReceiver?.name}-${userData.name}`
-          : `presence-${userData.name}-${selectedReceiver?.name}`,
-    });
+    // await axios.post("http://localhost:8000/api/typing-status/", {
+    //   userName: userData.name,
+    //   reciverName: selectedReceiver.name,
+    //   message,
+    //   channel:
+    //     userData.name > selectedReceiver?.name
+    //       ? `presence-${selectedReceiver?.name}-${userData.name}`
+    //       : `presence-${userData.name}-${selectedReceiver?.name}`,
+    // });
   };
 
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
@@ -285,13 +311,80 @@ export default function PublicChat() {
   };
 
   React.useEffect(() => {
-    handleConversationClick(
-      dispachersData[0] !== userData ? dispachersData[0] : dispachersData[1]
-    );
+    handleConversationClick(dispachersData[0]);
   }, []);
 
-  const handleFileUpload = (file) => {
-    setFile(file);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  undefined;
+
+  const [files, setFiles] = React.useState<File[] | null>(null);
+
+  const [fileUploadProgress, setUploadFileProgress] =
+    React.useState<FileUploadProgressTrackerType>();
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setFiles([...event.target.files]);
+    }
+  };
+
+  const uploadFileToDB = (item: File) => {
+    console.log("Uploading file");
+    const metadata = {
+      contentType: item.type,
+    };
+
+    const currentDate = new Date();
+    const currentTimestamp = currentDate.getTime();
+
+    const fileName = `${item.name}-${currentTimestamp}`;
+
+    const storageRef = ref(storage, fileName);
+
+    const uploadTask = uploadBytesResumable(storageRef, item, metadata);
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+
+        setUploadFileProgress((oldData) => ({
+          ...oldData,
+          [item.name]: { progress, snapshot },
+        }));
+
+        switch (snapshot.state) {
+          case "paused":
+            console.log("File upload paused");
+            break;
+          case "canceled":
+            console.log("File upload cancelled");
+            break;
+          case "success":
+            console.log("Success");
+            break;
+          default:
+            break;
+        }
+      },
+      (error) => {
+        console.log("Error occured", error);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          console.log(`File upload success at : ${downloadURL}`);
+        });
+        setFiles(null);
+        setUploadFileProgress(undefined);
+      }
+    );
+  };
+
+  const handleFileUpload = () => {
+    files?.forEach(async (file) => {
+      console.log(file);
+      await uploadFileToDB(file);
+    });
   };
 
   return (
@@ -366,6 +459,7 @@ export default function PublicChat() {
             <MessageList
               typingIndicator={
                 isTypingData.isTyping &&
+                isTypingData.senderName === selectedReceiver?.name &&
                 userData.name !== isTypingData.senderName && (
                   <TypingIndicator
                     content={`${selectedReceiver?.name} is typing: ${isTypingData.message}`}
@@ -406,6 +500,24 @@ export default function PublicChat() {
                   </>
                 );
               })}
+              {files && files?.length && (
+                <ExpansionPanel
+                  title="Files"
+                  open={true}
+                  className="absolute bottom-0 w-[80%] left-[5rem] "
+                >
+                  <div className="flex-col gap-y-8 justify-between h-[40vh]">
+                    {files.map((file) => {
+                      return (
+                        <FileNameCard
+                          fileName={file.name}
+                          filesUploadProgress={fileUploadProgress}
+                        />
+                      );
+                    })}
+                  </div>
+                </ExpansionPanel>
+              )}
             </MessageList>
 
             {selectedReceiver?.name && (
@@ -421,11 +533,21 @@ export default function PublicChat() {
                     submitMessage();
                     setMessage("");
                   }
+                  handleFileUpload();
                 }}
+                onAttachClick={() => fileInputRef.current?.click()}
               />
             )}
           </ChatContainer>
         </MainContainer>
+        <input
+          type="file"
+          multiple
+          onChange={handleChange}
+          hidden
+          ref={fileInputRef}
+          onClick={() => console.log("Clicked")}
+        />
       </div>
     </div>
   );

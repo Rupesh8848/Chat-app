@@ -8,6 +8,7 @@ import SelectChannel from "./Routes/SelectChannel";
 import axios from "axios";
 import NewUser from "./Routes/NewUser";
 import { Toaster } from "react-hot-toast";
+import { pusherClient } from "./lib/pusher";
 
 function App() {
   const [userName, setUserName] = React.useState<null | string>(null);
@@ -28,6 +29,7 @@ function App() {
         (dispatcher: { id: number }) => `${dispatcher.id}`
       );
       localStorage.setItem("dispatchersData", JSON.stringify(dispatchersData));
+      pusherClient.signin();
       navigate("public-chat", {
         state: {
           userData: response.data.userData,
