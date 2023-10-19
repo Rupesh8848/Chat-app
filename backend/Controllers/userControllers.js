@@ -73,4 +73,20 @@ const registerNewUser = async (req, res) => {
   }
 };
 
-module.exports = { userLogin, registerNewUser };
+const getAllDispatchers = async (req, res) => {
+  const requestingUserId = req.params.userId;
+  const dispatchersRef = firestoreDB.collection("dispatchers");
+  const snapshot = await dispatchersRef.get();
+  const dispatchers = [];
+  snapshot.docs.forEach((dispatcher) => {
+    const dispatcherData = dispatcher.data();
+    if (+dispatcherData.id !== +requestingUserId) {
+      console.log(dispatcherData.id, requestingUserId);
+      dispatchers.push(dispatcher.data());
+    }
+  });
+
+  return res.json(dispatchers);
+};
+
+module.exports = { userLogin, registerNewUser, getAllDispatchers };
