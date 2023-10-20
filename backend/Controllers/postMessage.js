@@ -119,4 +119,27 @@ const getMessages = async (req, res) => {
   return res.send(messages);
 };
 
-module.exports = { postMessage, postPublicMessage, getMessages };
+const sendFile = async (req, res) => {
+  const { userName, fileURL, reciverName, channel, fileName } = req.body;
+  try {
+    const responseFromDB = await firestoreDB.collection(channel).add({
+      message: fileName,
+      userName,
+      created: firestore.FieldValue.serverTimestamp(),
+      type: "file",
+      fileURL,
+    });
+    pusherServer.trigger(channel, "file-message", {
+      message: fileName,
+      userName,
+      type: "file",
+      fileURL,
+    });
+    return res.status(200);
+  } catch (error) {
+    console.log(error);
+    return res.status(400);
+  }
+};
+
+module.exports = { postMessage, postPublicMessage, getMessages, sendFile };

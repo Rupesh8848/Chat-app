@@ -6,9 +6,15 @@ import { GiCancel, GiPauseButton, GiPlayButton } from "react-icons/gi";
 export default function FileNameCard({
   fileName,
   filesUploadProgress,
+  setFiles,
+  setUploadFileProgress,
 }: {
   fileName: string;
   filesUploadProgress: FileUploadProgressTrackerType | undefined;
+  setFiles: React.Dispatch<React.SetStateAction<File[] | null>>;
+  setUploadFileProgress: React.Dispatch<
+    React.SetStateAction<FileUploadProgressTrackerType | undefined>
+  >;
 }) {
   return (
     <div className="h-min border-[1px] mt-2  flex-col items-center py-2 px-1 relative">
@@ -45,9 +51,28 @@ export default function FileNameCard({
             )}
 
             <div
-              onClick={() =>
-                filesUploadProgress[fileName].snapshot.task.cancel()
-              }
+              onClick={() => {
+                filesUploadProgress[fileName].snapshot.task.cancel();
+                setFiles((allFiles) => {
+                  if (allFiles?.length === 1) {
+                    return null;
+                  } else {
+                    return (
+                      allFiles?.filter(
+                        (fileToUpload) => fileToUpload.name !== fileName
+                      ) || null
+                    );
+                  }
+                });
+                setUploadFileProgress((allProgress) => {
+                  if (allProgress && Object.keys(allProgress).length > 1) {
+                    delete allProgress[fileName];
+                    return allProgress;
+                  } else {
+                    return undefined;
+                  }
+                });
+              }}
               className="hover:bg-gray-500  cursor-pointer rounded-full p-[.25rem]"
             >
               <GiCancel size={20} />

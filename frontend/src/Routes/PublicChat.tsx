@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 
 import axios from "axios";
 import { pusherClient } from "../lib/pusher";
@@ -33,6 +33,8 @@ import FileNameCard from "../Components/FileNameCard";
 type ChatUpdateDataType = {
   message: string;
   userName: string;
+  type?: string;
+  fileURL?: string;
 };
 
 type Dispatcher = {
@@ -90,6 +92,7 @@ export default function PublicChat() {
     senderName: string;
   }>({ message: "", isTyping: false, senderName: "" });
 
+  // @ts-expect-error-event-type-unknown
   const watchlistEventHandler = (event) => {
     if (event.name === "online") {
       setOnlineDispatchers((oldIds) => [...oldIds, ...event.user_ids]);
@@ -202,6 +205,16 @@ export default function PublicChat() {
           }, 2000);
         }
       );
+
+      // for files
+      channel.bind("file-message", (data: ChatUpdateDataType) => {
+        //here message contains the filename that was shared
+        console.log("File received: ", data);
+        const { message, userName, fileURL, type } = data;
+        setChats((oldChat) => {
+          return [...oldChat, { message, userName, fileURL, type }];
+        });
+      });
     });
 
     return () => {
@@ -210,21 +223,6 @@ export default function PublicChat() {
       });
     };
   }, []);
-
-  //fetch mesg according to selected dispatcher
-  React.useEffect(() => {
-    async function fetchNewMesg() {
-      const response = await axios.get(
-        `http://localhost:8000/api/message/${userData.name}/${selectedReceiver?.name}`
-      );
-
-      setChats(response.data);
-    }
-
-    if (selectedReceiver) {
-      fetchNewMesg();
-    }
-  }, [selectedReceiver]);
 
   const submitMessage = async () => {
     console.log(selectedReceiver);
@@ -282,6 +280,7 @@ export default function PublicChat() {
       );
     }
 
+    // its labelled as public route but the message will be sent to their respective channel rather than public channel
     await axios.post("http://localhost:8000/api/message/public", {
       userName: userData.name,
       message,
@@ -322,9 +321,38 @@ export default function PublicChat() {
   const [fileUploadProgress, setUploadFileProgress] =
     React.useState<FileUploadProgressTrackerType>();
 
+  function cancelAllUploadsWithProgress(
+    fileUploadProgress: FileUploadProgressTrackerType | undefined
+  ) {
+    if (fileUploadProgress) {
+      Object.keys(fileUploadProgress).forEach((key) => {
+        fileUploadProgress[key].snapshot.task.cancel();
+      });
+    }
+  }
+  //fetch mesg according to selected dispatcher
+  React.useEffect(() => {
+    async function fetchNewMesg() {
+      const response = await axios.get(
+        `http://localhost:8000/api/message/${userData.name}/${selectedReceiver?.name}`
+      );
+
+      setChats(response.data);
+    }
+
+    if (selectedReceiver) {
+      fetchNewMesg();
+      setFiles(null);
+      cancelAllUploadsWithProgress(fileUploadProgress);
+      setUploadFileProgress(undefined);
+    }
+  }, [selectedReceiver]);
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setFiles([...event.target.files]);
+      cancelAllUploadsWithProgress(fileUploadProgress);
+      setUploadFileProgress(undefined);
     }
   };
 
@@ -371,11 +399,38 @@ export default function PublicChat() {
         console.log("Error occured", error);
       },
       () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+        getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
           console.log(`File upload success at : ${downloadURL}`);
+          if (!selectedReceiver) return;
+          const channelName =
+            userData.name > selectedReceiver?.name
+              ? `presence-${selectedReceiver?.name}-${userData.name}`
+              : `presence-${userData.name}-${selectedReceiver?.name}`;
+          await axios.post("http://localhost:8000/api/message/file", {
+            userName: userData.name,
+            fileURL: downloadURL,
+            reciverName: selectedReceiver?.name,
+            channel: channelName,
+            fileName: item.name,
+          });
         });
-        setFiles(null);
-        setUploadFileProgress(undefined);
+        setFiles((allFiles) => {
+          if (allFiles?.length === 1) {
+            return null;
+          } else {
+            return (
+              allFiles?.filter(
+                (fileToUpload) => fileToUpload.name !== item.name
+              ) || null
+            );
+          }
+        });
+        setUploadFileProgress((allProgress) => {
+          if (allProgress) {
+            delete allProgress[fileName];
+            return allProgress;
+          }
+        });
       }
     );
   };
@@ -468,6 +523,32 @@ export default function PublicChat() {
               }
             >
               {chats.map((chat) => {
+                if (chat.type) {
+                  return (
+                    <Message
+                      model={{
+                        type: "html",
+                        direction:
+                          chat.userName === userData.name
+                            ? "outgoing"
+                            : "incoming",
+                        position: "normal",
+                      }}
+                    >
+                      <Avatar
+                        name={chat.userName}
+                        src={
+                          chat.userName === userData.name
+                            ? userData?.profilePic
+                            : selectedReceiver?.profilePic
+                        }
+                      />
+                      <Message.HtmlContent
+                        html={`<strong class="file-message"> <a href=${chat.fileURL}>${chat.message}</a> </strong>`}
+                      />
+                    </Message>
+                  );
+                }
                 return (
                   <>
                     <Message
@@ -510,8 +591,10 @@ export default function PublicChat() {
                     {files.map((file) => {
                       return (
                         <FileNameCard
+                          setUploadFileProgress={setUploadFileProgress}
                           fileName={file.name}
                           filesUploadProgress={fileUploadProgress}
+                          setFiles={setFiles}
                         />
                       );
                     })}
@@ -522,13 +605,15 @@ export default function PublicChat() {
 
             {selectedReceiver?.name && (
               <MessageInput
+                sendDisabled={false}
                 placeholder="Type message here"
                 onChange={(text) => {
                   setMessage(text);
                   isTypingHandler();
                 }}
-                value={message}
+                value={message || ""}
                 onSend={() => {
+                  console.log("On send triggered");
                   if (message.length > 0) {
                     submitMessage();
                     setMessage("");
