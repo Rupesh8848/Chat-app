@@ -149,10 +149,12 @@ export default function PublicChat() {
     publicChannel.bind("message-notification", (data: MessageNotification) => {
       console.log("New channel event", data.channelName);
 
-      setChats((oldChat) => [
-        ...oldChat,
-        { message: data.message, userName: data.senderUserName },
-      ]);
+      if (data.senderUserName === userData.name) {
+        setChats((oldChat) => [
+          ...oldChat,
+          { message: data.message, userName: data.senderUserName },
+        ]);
+      }
       setUserData(() => {
         if (data.senderUserName === userData.name) {
           return data.senderData;
@@ -160,37 +162,9 @@ export default function PublicChat() {
           return data.receiverData;
         }
       });
-
-      const channel = pusherClient.subscribe(data.channelName);
-      setMessageNotification({ ...data, seen: false });
-
-      channel.bind("chat-update", (newMessage: ChatUpdateDataType) => {
-        const { message, userName } = newMessage;
-
-        setChats((oldChats) => {
-          return [
-            ...oldChats,
-            {
-              message,
-              userName,
-            },
-          ];
-        });
-      });
-
-      channel.bind(
-        "is-typing",
-        (isTypingData: { message: string; senderUserName: string }) => {
-          setIsTypingData({
-            message: isTypingData.message,
-            isTyping: true,
-            senderName: isTypingData.senderUserName,
-          });
-          setTimeout(() => {
-            setIsTypingData({ message: "", isTyping: false, senderName: "" });
-          }, 2000);
-        }
-      );
+      if (data.receiverUserName === userData.name) {
+        setMessageNotification({ ...data, seen: false });
+      }
     });
 
     return () => {
@@ -209,13 +183,19 @@ export default function PublicChat() {
       channel.bind("chat-update", (data: ChatUpdateDataType) => {
         console.log("Inside chat update: ", data);
         const { message, userName } = data;
-        setChats((oldChats) => [
-          ...oldChats,
-          {
-            message,
-            userName,
-          },
-        ]);
+        if (userName === userData.name || selectedReceiver?.name === userName) {
+          console.log("Condition updater");
+          setChats((oldChats) => [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ]);
+        }
+        if (userName !== selectedReceiver?.name) {
+          setMessageNotification({ ...data, seen: false });
+        }
       });
 
       channel.bind(
@@ -248,7 +228,7 @@ export default function PublicChat() {
         pusherClient.unsubscribe(channelToUnSub);
       });
     };
-  }, []);
+  }, [userData]);
 
   const submitMessage = async () => {
     console.log(selectedReceiver);
@@ -258,53 +238,6 @@ export default function PublicChat() {
       userData.name > selectedReceiver?.name
         ? `presence-${selectedReceiver?.name}-${userData.name}`
         : `presence-${userData.name}-${selectedReceiver?.name}`;
-
-    // if (!userData.channels.includes(channelName)) {
-    //   console.log("New channel created");
-    //   console.log(userData);
-    //   const channels = [...userData.channels, channelName];
-    //   setUserData((oldData) => ({
-    //     ...oldData,
-    //     channels,
-    //   }));
-    //   console.log(userData);
-    //   localStorage.setItem("userData", JSON.stringify(userData));
-    //   const channel = pusherClient.subscribe(channelName);
-
-    //   channel.bind("chat-update", (data: ChatUpdateDataType) => {
-    //     console.log("Inside chat update: ", data);
-    //     const { message, userName } = data;
-    //     setChats((oldChats) => {
-    //       if (data.userName === selectedReceiver?.name) {
-    //         return [
-    //           ...oldChats,
-    //           {
-    //             message,
-    //             userName,
-    //           },
-    //         ];
-    //       } else {
-    //         return oldChats;
-    //       }
-    //     });
-    //   });
-
-    //   channel.bind(
-    //     "is-typing",
-    //     (data: { message: string; senderUserName: string }) => {
-    //       console.log("Is typing event received");
-    //       console.log(data);
-    //       setIsTypingData({
-    //         message: data.message,
-    //         isTyping: true,
-    //         senderName: data.senderUserName,
-    //       });
-    //       setTimeout(() => {
-    //         setIsTypingData({ message: "", isTyping: false, senderName: "" });
-    //       }, 2000);
-    //     }
-    //   );
-    // }
 
     // its labelled as public route but the message will be sent to their respective channel rather than public channel
     await axios.post("http://localhost:8000/api/message/public", {
@@ -481,7 +414,7 @@ export default function PublicChat() {
           <Sidebar position="left" scrollable={true}>
             <ConversationList>
               {dispachersData.map((dispatcher: Dispatcher) => {
-                if (dispatcher.name === userData.name) {
+                if (dispatcher?.name === userData?.name) {
                   return;
                 }
 
