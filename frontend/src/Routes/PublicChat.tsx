@@ -108,6 +108,18 @@ export default function PublicChat() {
     pusherClient.signin();
     pusherClient.user.watchlist.bind("online", watchlistEventHandler);
     pusherClient.user.watchlist.bind("offline", watchlistEventHandler);
+
+    // get user data on each refresh
+    async function getUserData() {
+      if (!localStorage.getItem("userData")) return;
+      const userId = JSON.parse(localStorage.getItem("userData") || "").id;
+      const res = await axios.get(
+        `http://localhost:8000/api/user/user-data/${userId}`
+      );
+
+      console.log(res.data);
+    }
+    getUserData();
   }, []);
 
   React.useLayoutEffect(() => {
@@ -181,15 +193,13 @@ export default function PublicChat() {
       channel.bind("chat-update", (data: ChatUpdateDataType) => {
         console.log("Inside chat update: ", data);
         const { message, userName } = data;
-        if (userName === selectedReceiver?.name && userName !== userData.name) {
-          setChats((oldChats) => [
-            ...oldChats,
-            {
-              message,
-              userName,
-            },
-          ]);
-        }
+        setChats((oldChats) => [
+          ...oldChats,
+          {
+            message,
+            userName,
+          },
+        ]);
       });
 
       channel.bind(
@@ -227,58 +237,58 @@ export default function PublicChat() {
   const submitMessage = async () => {
     console.log(selectedReceiver);
     if (!selectedReceiver) return;
-    setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
+    // setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
     const channelName =
       userData.name > selectedReceiver?.name
         ? `presence-${selectedReceiver?.name}-${userData.name}`
         : `presence-${userData.name}-${selectedReceiver?.name}`;
 
-    if (!userData.channels.includes(channelName)) {
-      console.log("New channel created");
-      console.log(userData);
-      const channels = [...userData.channels, channelName];
-      setUserData((oldData) => ({
-        ...oldData,
-        channels,
-      }));
-      console.log(userData);
-      localStorage.setItem("userData", JSON.stringify(userData));
-      const channel = pusherClient.subscribe(channelName);
+    // if (!userData.channels.includes(channelName)) {
+    //   console.log("New channel created");
+    //   console.log(userData);
+    //   const channels = [...userData.channels, channelName];
+    //   setUserData((oldData) => ({
+    //     ...oldData,
+    //     channels,
+    //   }));
+    //   console.log(userData);
+    //   localStorage.setItem("userData", JSON.stringify(userData));
+    //   const channel = pusherClient.subscribe(channelName);
 
-      channel.bind("chat-update", (data: ChatUpdateDataType) => {
-        console.log("Inside chat update: ", data);
-        const { message, userName } = data;
-        setChats((oldChats) => {
-          if (data.userName === selectedReceiver?.name) {
-            return [
-              ...oldChats,
-              {
-                message,
-                userName,
-              },
-            ];
-          } else {
-            return oldChats;
-          }
-        });
-      });
+    //   channel.bind("chat-update", (data: ChatUpdateDataType) => {
+    //     console.log("Inside chat update: ", data);
+    //     const { message, userName } = data;
+    //     setChats((oldChats) => {
+    //       if (data.userName === selectedReceiver?.name) {
+    //         return [
+    //           ...oldChats,
+    //           {
+    //             message,
+    //             userName,
+    //           },
+    //         ];
+    //       } else {
+    //         return oldChats;
+    //       }
+    //     });
+    //   });
 
-      channel.bind(
-        "is-typing",
-        (data: { message: string; senderUserName: string }) => {
-          console.log("Is typing event received");
-          console.log(data);
-          setIsTypingData({
-            message: data.message,
-            isTyping: true,
-            senderName: data.senderUserName,
-          });
-          setTimeout(() => {
-            setIsTypingData({ message: "", isTyping: false, senderName: "" });
-          }, 2000);
-        }
-      );
-    }
+    //   channel.bind(
+    //     "is-typing",
+    //     (data: { message: string; senderUserName: string }) => {
+    //       console.log("Is typing event received");
+    //       console.log(data);
+    //       setIsTypingData({
+    //         message: data.message,
+    //         isTyping: true,
+    //         senderName: data.senderUserName,
+    //       });
+    //       setTimeout(() => {
+    //         setIsTypingData({ message: "", isTyping: false, senderName: "" });
+    //       }, 2000);
+    //     }
+    //   );
+    // }
 
     // its labelled as public route but the message will be sent to their respective channel rather than public channel
     await axios.post("http://localhost:8000/api/message/public", {
@@ -611,14 +621,16 @@ export default function PublicChat() {
                   setMessage(text);
                   isTypingHandler();
                 }}
-                value={message || ""}
+                value={message || " "}
                 onSend={() => {
                   console.log("On send triggered");
                   if (message.length > 0) {
                     submitMessage();
                     setMessage("");
                   }
-                  handleFileUpload();
+                  if (files) {
+                    handleFileUpload();
+                  }
                 }}
                 onAttachClick={() => fileInputRef.current?.click()}
               />

@@ -1,5 +1,16 @@
 {
   "dependencies": {
     "react-hot-toast": "^2.4.1"
-  }
+  },
+  "name": "reactinternship",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start":  "npm run server --prefix backend & npm run dev --prefix frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }

@@ -89,4 +89,20 @@ const getAllDispatchers = async (req, res) => {
   return res.json(dispatchers);
 };
 
-module.exports = { userLogin, registerNewUser, getAllDispatchers };
+const getUserData = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const dispatchersCollectionRef = firestoreDB.collection("dispatchers");
+    const snapshot = await dispatchersCollectionRef
+      .where("id", "==", userId)
+      .get();
+
+    const userData = snapshot.docs[0].data();
+
+    return res.status(302).json({ userData });
+  } catch (error) {
+    return res.status(404);
+  }
+};
+
+module.exports = { userLogin, registerNewUser, getAllDispatchers, getUserData };
