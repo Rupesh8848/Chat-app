@@ -199,6 +199,10 @@ export default function PublicChat() {
   }, []);
 
   React.useEffect(() => {
+    localStorage.setItem("userData", JSON.stringify(userData));
+  }, [userData]);
+
+  React.useEffect(() => {
     userData.channels.forEach((channelToSubscribe) => {
       const channel = pusherClient.subscribe(channelToSubscribe);
 
