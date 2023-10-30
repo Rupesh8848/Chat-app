@@ -181,8 +181,12 @@ export default function PublicChat() {
       const channel = pusherClient.subscribe(channelToSubscribe);
 
       channel.bind("chat-update", (data: ChatUpdateDataType) => {
-        console.log("Inside chat update: ", data);
         const { message, userName } = data;
+        console.log("Inside chat update: ");
+        console.log("UserName", userName);
+        console.log("UserData.name ", userData.name);
+        console.log("SelctedRecvr: ", selectedReceiver?.name);
+
         if (userName === userData.name || selectedReceiver?.name === userName) {
           console.log("Condition updater");
           setChats((oldChats) => [
