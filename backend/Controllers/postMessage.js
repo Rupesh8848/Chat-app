@@ -3,19 +3,31 @@ const { pusherServer } = require("../lib/pusher");
 const { firestore } = require("firebase-admin");
 
 const postMessage = async (req, res) => {
-  const { message, userName } = req.body;
+  const { message, userName, channelName } = req.body;
 
   console.log("Message received: ", message);
-  const response = await pusherServer.trigger(
-    "presence-channel",
-    "chat-update",
-    {
-      message,
-      userName,
-    }
-  );
-  console.log(response);
-  return res.json({ status: 200 });
+  try {
+    firestoreDB
+      .collection(channelName)
+      .add({
+        message,
+        userName,
+        created: firestore.FieldValue.serverTimestamp(),
+      })
+      .then(async () => {
+        pusherServer
+          .trigger(channelName, "chat-update", {
+            message,
+            userName,
+          })
+          .then(() => {
+            return res.json({ status: 200 });
+          });
+      });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ message: "Some error occured in server" });
+  }
 };
 
 const postPublicMessage = async (req, res) => {

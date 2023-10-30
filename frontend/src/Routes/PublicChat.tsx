@@ -182,21 +182,18 @@ export default function PublicChat() {
 
       channel.bind("chat-update", (data: ChatUpdateDataType) => {
         const { message, userName } = data;
-        console.log("Inside chat update: ");
-        console.log("UserName", userName);
-        console.log("UserData.name ", userData.name);
-        console.log("SelctedRecvr: ", selectedReceiver?.name);
+        // console.log("Inside chat update: ");
+        // console.log("UserName", userName);
+        // console.log("UserData.name ", userData.name);
+        // console.log("SelctedRecvr: ", selectedReceiver?.name);
 
-        if (userName === userData.name || selectedReceiver?.name === userName) {
-          console.log("Condition updater");
-          setChats((oldChats) => [
-            ...oldChats,
-            {
-              message,
-              userName,
-            },
-          ]);
-        }
+        setChats((oldChats) => [
+          ...oldChats,
+          {
+            message,
+            userName,
+          },
+        ]);
         if (userName !== selectedReceiver?.name) {
           setMessageNotification({ ...data, seen: false });
         }
@@ -237,19 +234,27 @@ export default function PublicChat() {
   const submitMessage = async () => {
     console.log(selectedReceiver);
     if (!selectedReceiver) return;
-    // setChats((oldChat) => [...oldChat, { message, userName: userData.name }]);
+
     const channelName =
       userData.name > selectedReceiver?.name
         ? `presence-${selectedReceiver?.name}-${userData.name}`
         : `presence-${userData.name}-${selectedReceiver?.name}`;
 
-    // its labelled as public route but the message will be sent to their respective channel rather than public channel
-    await axios.post("http://localhost:8000/api/message/public", {
-      userName: userData.name,
-      message,
-      reciverName: selectedReceiver.name,
-      channel: channelName,
-    });
+    if (userData.channels.includes(channelName)) {
+      await axios.post("http://localhost:8000/api/message/", {
+        message,
+        userName: userData.name,
+        channelName,
+      });
+    } else {
+      // its labelled as public route but the message will be sent to their respective channel rather than public channel
+      await axios.post("http://localhost:8000/api/message/public", {
+        userName: userData.name,
+        message,
+        reciverName: selectedReceiver.name,
+        channel: channelName,
+      });
+    }
   };
 
   const isTypingHandler = async () => {
