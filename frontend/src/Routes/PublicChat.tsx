@@ -51,6 +51,8 @@ type MessageNotification = {
   message: string;
   senderUserName: string;
   channelName: string;
+  receiverData: UserData;
+  senderData: UserData;
 };
 
 type MessageNotificationStateType = {
@@ -134,6 +136,7 @@ export default function PublicChat() {
   }, []);
 
   React.useEffect(() => {
+    //new channel creation handler
     const publicChannel = pusherClient.subscribe("notification");
 
     publicChannel.bind("new-dispatcher", (data: Dispatcher) => {
@@ -144,41 +147,50 @@ export default function PublicChat() {
     });
 
     publicChannel.bind("message-notification", (data: MessageNotification) => {
-      if (
-        data.receiverUserName === userData.name ||
-        data.senderUserName === userData.name
-      ) {
-        const channel = pusherClient.subscribe(data.channelName);
-        setMessageNotification({ ...data, seen: false });
+      console.log("New channel event", data.channelName);
 
-        channel.bind("chat-update", (data: ChatUpdateDataType) => {
-          const { message, userName } = data;
+      setChats((oldChat) => [
+        ...oldChat,
+        { message: data.message, userName: data.senderUserName },
+      ]);
+      setUserData(() => {
+        if (data.senderUserName === userData.name) {
+          return data.senderData;
+        } else {
+          return data.receiverData;
+        }
+      });
 
-          setChats((oldChats) => {
-            return [
-              ...oldChats,
-              {
-                message,
-                userName,
-              },
-            ];
-          });
+      const channel = pusherClient.subscribe(data.channelName);
+      setMessageNotification({ ...data, seen: false });
+
+      channel.bind("chat-update", (newMessage: ChatUpdateDataType) => {
+        const { message, userName } = newMessage;
+
+        setChats((oldChats) => {
+          return [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ];
         });
+      });
 
-        channel.bind(
-          "is-typing",
-          (data: { message: string; senderUserName: string }) => {
-            setIsTypingData({
-              message: data.message,
-              isTyping: true,
-              senderName: data.senderUserName,
-            });
-            setTimeout(() => {
-              setIsTypingData({ message: "", isTyping: false, senderName: "" });
-            }, 2000);
-          }
-        );
-      }
+      channel.bind(
+        "is-typing",
+        (isTypingData: { message: string; senderUserName: string }) => {
+          setIsTypingData({
+            message: isTypingData.message,
+            isTyping: true,
+            senderName: isTypingData.senderUserName,
+          });
+          setTimeout(() => {
+            setIsTypingData({ message: "", isTyping: false, senderName: "" });
+          }, 2000);
+        }
+      );
     });
 
     return () => {

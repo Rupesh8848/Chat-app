@@ -31,7 +31,7 @@ const postPublicMessage = async (req, res) => {
       return res.json({ message: "Some error occured" });
     }
 
-    const userData = snapshot.docs[0].data();
+    const userData = snapshot.docs[0].data(); //sender obj
 
     const userDocId = snapshot.docs[0].id;
 
@@ -46,7 +46,7 @@ const postPublicMessage = async (req, res) => {
       return res.json({ message: "Some error occured" });
     }
 
-    const receiverData = receiverSnapshot.docs[0].data();
+    const receiverData = receiverSnapshot.docs[0].data(); //receiver obj
 
     const receiverDocId = receiverSnapshot.docs[0].id;
 
@@ -71,11 +71,24 @@ const postPublicMessage = async (req, res) => {
       const updateRes = await userRef.update({
         channels: firestore.FieldValue.arrayUnion(channel),
       });
+
+      const updatedUserRef = await firestoreDB
+        .collection("dispatchers")
+        .doc(userDocId)
+        .get();
+
+      const updatedReceiverRef = await firestoreDB
+        .collection("dispatchers")
+        .doc(receiverDocId)
+        .get();
+
       pusherServer.trigger("notification", "message-notification", {
         receiverUserName: reciverName,
         message: message,
         senderUserName: userName,
         channelName: channel,
+        senderData: updatedUserRef.data(),
+        receiverData: updatedReceiverRef.data(),
       });
     }
     // if document successfully added to db then emit event
