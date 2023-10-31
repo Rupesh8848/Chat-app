@@ -29,6 +29,7 @@ import {
 } from "@chatscope/chat-ui-kit-react";
 import { storage } from "../firebase";
 import FileNameCard from "../Components/FileNameCard";
+import { useNavigate } from "react-router-dom";
 
 type ChatUpdateDataType = {
   message: string;
@@ -93,6 +94,8 @@ export default function PublicChat() {
     isTyping: boolean;
     senderName: string;
   }>({ message: "", isTyping: false, senderName: "" });
+
+  const navigate = useNavigate();
 
   // @ts-expect-error-event-type-unknown
   const watchlistEventHandler = (event) => {
@@ -243,7 +246,7 @@ export default function PublicChat() {
         pusherClient.unsubscribe(channelToUnSub);
       });
     };
-  }, [userData]);
+  }, [userData, selectedReceiver]);
 
   const submitMessage = async () => {
     console.log(selectedReceiver);
@@ -424,15 +427,34 @@ export default function PublicChat() {
     });
   };
 
+  const logoutHandler = () => {
+    localStorage.clear();
+
+    pusherClient.channels.all().forEach((channel) => {
+      channel.unbind_all();
+      pusherClient.unsubscribe(channel.name);
+    });
+
+    navigate("/");
+    // userData.channels.forEach((channel) => {
+    //   if (channel !== "notification") {
+    //     channel.unbind("chat-update");
+    //     pusherClient.unbind("is-typing");
+    //     pusherClient.unbind("file-message");
+    //     pusherClient.unsubscribe(channel);
+    //   }
+    // });
+  };
+
   return (
     <div className="h-[100vh] w-full flex justify-center items-center">
-      <div className="h-[80%] w-[90%]">
-        {/* <FileUploader
-          multiple={true}
-          handleChange={handleFileUpload}
-          types={fileTypes}
-          name={file}
-        /> */}
+      <button
+        onClick={logoutHandler}
+        className="absolute bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded top-2 right-[5%] z-50"
+      >
+        LogOut
+      </button>
+      <div className="h-[80%] w-[90%] ">
         <MainContainer responsive>
           <Sidebar position="left" scrollable={true}>
             <ConversationList>
