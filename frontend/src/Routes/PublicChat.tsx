@@ -97,6 +97,8 @@ export default function PublicChat() {
 
   const navigate = useNavigate();
 
+  //Image Types
+  const fileImgTypes = ["JPG", "PNG", "GIF", "JPEG"];
   // @ts-expect-error-event-type-unknown
   const watchlistEventHandler = (event) => {
     if (event.name === "online") {
@@ -336,6 +338,7 @@ export default function PublicChat() {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setFiles([...event.target.files]);
+      console.log(files);
       cancelAllUploadsWithProgress(fileUploadProgress);
       setUploadFileProgress(undefined);
     }
@@ -529,8 +532,12 @@ export default function PublicChat() {
             >
               {chats.map((chat) => {
                 if (chat.type) {
+                  const isImage = fileImgTypes.includes(
+                    chat.message.split(".")[1].toUpperCase()
+                  );
                   return (
                     <Message
+                      key={chat.userName}
                       model={{
                         type: "html",
                         direction:
@@ -549,7 +556,11 @@ export default function PublicChat() {
                         }
                       />
                       <Message.HtmlContent
-                        html={`<strong class="file-message"> <a href=${chat.fileURL}>${chat.message}</a> </strong>`}
+                        html={
+                          !isImage
+                            ? `<strong class="file-message"> <a href=${chat.fileURL}>${chat.message}</a> </strong>`
+                            : `<a href=${chat.fileURL}> <img src=${chat.fileURL} width="200px" height="200px" alt="${chat.message}"/></a> `
+                        }
                       />
                     </Message>
                   );
@@ -638,7 +649,9 @@ export default function PublicChat() {
           onChange={handleChange}
           hidden
           ref={fileInputRef}
-          onClick={() => console.log("Clicked")}
+          onClick={() => {
+            console.log("Clicked");
+          }}
         />
       </div>
     </div>
