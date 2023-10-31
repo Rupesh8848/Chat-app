@@ -185,17 +185,31 @@ export default function PublicChat() {
         // console.log("Inside chat update: ");
         // console.log("UserName", userName);
         // console.log("UserData.name ", userData.name);
-        // console.log("SelctedRecvr: ", selectedReceiver?.name);
+        console.log("SelctedRecvr: ", selectedReceiver?.name);
 
-        setChats((oldChats) => [
-          ...oldChats,
-          {
-            message,
-            userName,
-          },
-        ]);
-        if (userName !== selectedReceiver?.name) {
-          setMessageNotification({ ...data, seen: false });
+        if (userName === userData.name) {
+          setChats((oldChats) => [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ]);
+        }
+
+        if (selectedReceiver?.name === userName) {
+          setChats((oldChats) => [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ]);
+        }
+
+        if (selectedReceiver?.name !== userName) {
+          console.log(userName);
+          setMessageNotification({ seen: false, senderUserName: userName });
         }
       });
 
@@ -273,7 +287,7 @@ export default function PublicChat() {
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
     if (selectedReceiver === selectedDispatcher) return;
     setChats([]);
-    setMessageNotification((oldData) => ({ ...oldData, seen: true }));
+    setMessageNotification({ seen: true });
     setSelectedReceiver(selectedDispatcher);
   };
 
@@ -434,7 +448,8 @@ export default function PublicChat() {
                         ? "bg-gray-500"
                         : ""
                     } ${
-                      messageNotification.senderUserName === dispatcher.name
+                      messageNotification.senderUserName === dispatcher.name &&
+                      !messageNotification.seen
                         ? "bg-red-400"
                         : ""
                     }`}
