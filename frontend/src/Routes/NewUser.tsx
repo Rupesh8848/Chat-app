@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 // import { FileUploader } from "react-drag-drop-files";
 import { storage } from "../firebase";
-import { getDownloadURL, listAll, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
 
 const NewUser = () => {
@@ -12,8 +12,6 @@ const NewUser = () => {
   const [file, setFile] = React.useState(null);
   const [error, setError] = React.useState<string | null>(null);
   const [fileError, setFileError] = React.useState<string | null>(null);
-
-  const ImageListRef = ref(storage, "images/");
 
   // const fileTypes = ["JPG", "PNG", "GIF"];
   const navigation = useNavigate();
@@ -31,7 +29,6 @@ const NewUser = () => {
     if ((input || input.trim().length > 0) && file) {
       const ImageRef = ref(storage, `images/${file + v4()}`);
       uploadBytes(ImageRef, file).then((response) => {
-        alert("Image Uploaded");
         getDownloadURL(response.ref).then(async (url) => {
           console.log(url);
           const res = await axios.post(

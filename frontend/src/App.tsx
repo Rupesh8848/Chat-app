@@ -7,15 +7,19 @@ import PublicChat from "./Routes/PublicChat";
 import SelectChannel from "./Routes/SelectChannel";
 import axios from "axios";
 import NewUser from "./Routes/NewUser";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { pusherClient } from "./lib/pusher";
 
 function App() {
   const [userName, setUserName] = React.useState<null | string>(null);
   const navigate = useNavigate();
+
+  const [loading, setLoading] = React.useState(false);
+
   const handleLogin = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
+    setLoading(true);
     e.preventDefault();
     const response = await axios.post(
       "http://localhost:8000/api/user/auth/login",
@@ -23,7 +27,7 @@ function App() {
         dispatcherName: userName,
       }
     );
-    if (response.status === 200) {
+    if (response.data.userData) {
       localStorage.setItem("userData", JSON.stringify(response.data.userData));
       const dispatchersData = response.data.dispatchersData.map(
         (dispatcher: { id: number }) => `${dispatcher.id}`
@@ -36,13 +40,18 @@ function App() {
           dispachersData: response.data.dispatchersData,
         },
       });
-    } else if (response.status === 400) {
-      console.log(response.data.message);
+    } else if (response.data.message) {
+      toast.error(response.data.message);
     }
+    setLoading(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserName(e.target.value);
+  };
+
+  const resetUserName = () => {
+    setUserName(null);
   };
 
   return (
@@ -55,6 +64,8 @@ function App() {
               userName={userName}
               handleChange={handleChange}
               handleLogin={handleLogin}
+              loading={loading}
+              resetUserName={resetUserName}
             />
           }
         />

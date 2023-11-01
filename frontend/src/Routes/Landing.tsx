@@ -1,22 +1,40 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { ClockLoader } from "react-spinners";
 export default function Landing({
   userName,
   handleChange,
   handleLogin,
+  loading,
+  resetUserName,
 }: {
   userName: string | null;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleLogin: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  loading: boolean;
+  resetUserName: () => void;
 }) {
   React.useEffect(() => {
     if (userName) {
       location.reload();
     }
   }, []);
+  const navigate = useNavigate();
+  const handleNavigateToNewDisptacher = () => {
+    resetUserName();
+    navigate("/new-user");
+  };
+
   return (
     <>
       <div className="container mx-auto h-screen flex flex-col justify-center items-center ">
+        {loading && (
+          <div className="inset-0 absolute bg-[rgba(0,0,0,0.5)] flex items-center justify-center">
+            <div className="p-4 bg-[#2AD575]">
+              <ClockLoader color="#D52A8A" size={100} />
+            </div>
+          </div>
+        )}
         <div
           className="border-2 border-gray-400 shadow-lg rounded-lg p-8 mb-8"
           style={{ backgroundColor: "#FFE5B4" }}
@@ -37,7 +55,9 @@ export default function Landing({
               Login
             </button>
             <label className="text-xs font-semibold-light mt-2 cursor-pointer underline">
-              <Link to="/new-user">Create New Dispatcher?</Link>
+              <span onClick={handleNavigateToNewDisptacher}>
+                Create new dispatcher?
+              </span>
             </label>
           </div>
         </div>
