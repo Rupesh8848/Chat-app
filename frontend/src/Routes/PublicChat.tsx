@@ -468,14 +468,6 @@ export default function PublicChat() {
     });
 
     navigate("/");
-    // userData.channels.forEach((channel) => {
-    //   if (channel !== "notification") {
-    //     channel.unbind("chat-update");
-    //     pusherClient.unbind("is-typing");
-    //     pusherClient.unbind("file-message");
-    //     pusherClient.unsubscribe(channel);
-    //   }
-    // });
   };
 
   return (
