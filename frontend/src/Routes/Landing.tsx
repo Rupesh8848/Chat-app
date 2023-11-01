@@ -18,6 +18,10 @@ export default function Landing({
     if (userName) {
       location.reload();
     }
+    if (localStorage.getItem("loggedOut") === "true") {
+      localStorage.clear();
+      location.reload();
+    }
   }, []);
   const navigate = useNavigate();
   const handleNavigateToNewDisptacher = () => {

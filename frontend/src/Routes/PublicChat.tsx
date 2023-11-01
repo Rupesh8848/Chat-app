@@ -460,6 +460,8 @@ export default function PublicChat() {
   const logoutHandler = () => {
     localStorage.clear();
 
+    localStorage.setItem("loggedOut", "true");
+
     pusherClient.channels.all().forEach((channel) => {
       channel.unbind_all();
       pusherClient.unsubscribe(channel.name);
@@ -521,7 +523,7 @@ export default function PublicChat() {
                       }
                       lastSenderName={
                         dispatcher.name !== messageNotification.senderUserName
-                          ? ""
+                          ? false
                           : messageNotification.senderUserName
                       }
                     />
