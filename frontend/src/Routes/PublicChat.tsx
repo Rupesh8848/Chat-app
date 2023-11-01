@@ -183,6 +183,13 @@ export default function PublicChat() {
   }, [userData]);
 
   React.useEffect(() => {
+    pusherClient.allChannels().forEach((channel) => {
+      if (channel.name !== "notification") {
+        channel.unbind_all();
+        channel.unsubscribe();
+      }
+    });
+
     userData.channels.forEach((channelToSubscribe) => {
       const channel = pusherClient.subscribe(channelToSubscribe);
 
