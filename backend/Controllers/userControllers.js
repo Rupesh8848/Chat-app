@@ -10,7 +10,7 @@ const userLogin = async (req, res) => {
     .get();
 
   if (snapshot.empty) {
-    return res.status(400).json({ message: "Please enter a valid id" });
+    return res.json({ message: "Please enter a valid id" });
   }
 
   const allDispatchers = await dispatchersRef.get();
