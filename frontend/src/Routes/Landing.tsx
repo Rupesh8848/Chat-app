@@ -9,6 +9,11 @@ export default function Landing({
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleLogin: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
 }) {
+  React.useEffect(() => {
+    if (userName) {
+      location.reload();
+    }
+  }, []);
   return (
     <>
       <div className="container mx-auto h-screen flex flex-col justify-center items-center ">

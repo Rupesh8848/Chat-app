@@ -3,7 +3,7 @@ const { pusherServer } = require("../lib/pusher");
 const { firestore } = require("firebase-admin");
 
 const postMessage = async (req, res) => {
-  const { message, userName, channelName } = req.body;
+  const { message, userName, channelName, reciverName } = req.body;
 
   console.log("Message received: ", message);
   try {
@@ -13,12 +13,14 @@ const postMessage = async (req, res) => {
         message,
         userName,
         created: firestore.FieldValue.serverTimestamp(),
+        receiver: reciverName,
       })
       .then(async () => {
         pusherServer
           .trigger(channelName, "chat-update", {
             message,
             userName,
+            reciverName,
           })
           .then(() => {
             return res.json({ status: 200 });

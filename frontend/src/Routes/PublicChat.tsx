@@ -36,6 +36,7 @@ type ChatUpdateDataType = {
   userName: string;
   type?: string;
   fileURL?: string;
+  reciverName?: string;
 };
 
 type Dispatcher = {
@@ -187,10 +188,6 @@ export default function PublicChat() {
 
       channel.bind("chat-update", (data: ChatUpdateDataType) => {
         const { message, userName } = data;
-        // console.log("Inside chat update: ");
-        // console.log("UserName", userName);
-        // console.log("UserData.name ", userData.name);
-        console.log("SelctedRecvr: ", selectedReceiver?.name);
 
         if (userName === userData.name) {
           setChats((oldChats) => [
@@ -213,8 +210,13 @@ export default function PublicChat() {
         }
 
         if (selectedReceiver?.name !== userName) {
-          console.log(userName);
-          setMessageNotification({ seen: false, senderUserName: userName });
+          console.log(data);
+          setMessageNotification({
+            seen: false,
+            senderUserName: userName,
+            message: data.message,
+            receiverUserName: data.reciverName,
+          });
         }
       });
 
@@ -235,11 +237,35 @@ export default function PublicChat() {
       // for files
       channel.bind("file-message", (data: ChatUpdateDataType) => {
         //here message contains the filename that was shared
-        console.log("File received: ", data);
-        const { message, userName, fileURL, type } = data;
-        setChats((oldChat) => {
-          return [...oldChat, { message, userName, fileURL, type }];
-        });
+        const { message, userName, fileURL, type, reciverName } = data;
+
+        if (userName === userData.name) {
+          setChats((oldChats) => [
+            ...oldChats,
+            { message, userName, fileURL, type },
+          ]);
+        }
+
+        if (selectedReceiver?.name === userName) {
+          setChats((oldChats) => [
+            ...oldChats,
+            { message, userName, fileURL, type },
+          ]);
+        }
+
+        if (selectedReceiver?.name !== userName) {
+          console.log(data);
+          setMessageNotification({
+            seen: false,
+            senderUserName: userName,
+            message,
+            receiverUserName: reciverName,
+          });
+        }
+
+        // setChats((oldChat) => {
+        //   return [...oldChat, { message, userName, fileURL, type }];
+        // });
       });
     });
 
@@ -264,6 +290,7 @@ export default function PublicChat() {
         message,
         userName: userData.name,
         channelName,
+        reciverName: selectedReceiver.name,
       });
     } else {
       // its labelled as public route but the message will be sent to their respective channel rather than public channel
@@ -487,7 +514,16 @@ export default function PublicChat() {
                     />
                     <Conversation.Content
                       name={dispatcher.name}
-                      // lastSenderName="Lilly"
+                      info={
+                        dispatcher.name !== messageNotification.senderUserName
+                          ? ""
+                          : messageNotification.message
+                      }
+                      lastSenderName={
+                        dispatcher.name !== messageNotification.senderUserName
+                          ? ""
+                          : messageNotification.senderUserName
+                      }
                     />
                     <Avatar
                       src={dispatcher.profilePic}

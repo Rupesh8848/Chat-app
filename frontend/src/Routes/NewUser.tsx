@@ -63,15 +63,6 @@ const NewUser = () => {
     }
   };
 
-  React.useEffect(() => {
-    listAll(ImageListRef).then((response) => {
-      response.items.forEach((item) => {
-        getDownloadURL(item).then((url) => {
-          console.log(url);
-        });
-      });
-    });
-  }, []);
   return (
     <div className="container mx-auto h-screen flex flex-col justify-center items-center ">
       <div
