@@ -74,7 +74,9 @@ function App() {
           element={<SelectChannel userName={userName || ""} />}
         />
         <Route path="chat" element={<Chat />} />
-        <Route path="public-chat" element={<PublicChat />} />
+        <Route path="public-chat" element={<PublicChat />}>
+          <Route path=":channel" element={<PublicChat />} />
+        </Route>
         <Route path="new-user" element={<NewUser />} />
       </Routes>
       <Toaster />

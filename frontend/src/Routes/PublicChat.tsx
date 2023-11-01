@@ -183,13 +183,6 @@ export default function PublicChat() {
   }, [userData]);
 
   React.useEffect(() => {
-    pusherClient.allChannels().forEach((channel) => {
-      if (channel.name !== "notification") {
-        channel.unbind_all();
-        channel.unsubscribe();
-      }
-    });
-
     userData.channels.forEach((channelToSubscribe) => {
       const channel = pusherClient.subscribe(channelToSubscribe);
 
@@ -277,8 +270,14 @@ export default function PublicChat() {
     });
 
     return () => {
-      userData.channels.forEach((channelToUnSub) => {
-        pusherClient.unsubscribe(channelToUnSub);
+      // userData.channels.forEach((channelToUnSub) => {
+      //   pusherClient.unsubscribe(channelToUnSub);
+      // });
+      pusherClient.allChannels().forEach((channel) => {
+        if (channel.name !== "notification") {
+          channel.unbind_all();
+          channel.unsubscribe();
+        }
       });
     };
   }, [userData, selectedReceiver]);
@@ -328,6 +327,7 @@ export default function PublicChat() {
     setChats([]);
     setMessageNotification({ seen: true });
     setSelectedReceiver(selectedDispatcher);
+    navigate("/public-chat/new");
   };
 
   React.useEffect(() => {
