@@ -144,6 +144,7 @@ export default function PublicChat() {
     const publicChannel = pusherClient.subscribe("notification");
 
     publicChannel.bind("new-dispatcher", (data: Dispatcher) => {
+      console.log("New dispatcher ", data);
       setDispatcherData((oldDispatcherData: Array<Dispatcher>) => [
         ...oldDispatcherData,
         data,
@@ -151,6 +152,7 @@ export default function PublicChat() {
     });
 
     publicChannel.bind("message-notification", (data: MessageNotification) => {
+      console.log("Message to new channel: ", data);
       if (data.senderUserName === userData.name) {
         setChats((oldChat) => [
           ...oldChat,
@@ -170,8 +172,8 @@ export default function PublicChat() {
     });
 
     return () => {
-      pusherClient.channel("notification").unbind_all();
-      pusherClient.channel("notification").unsubscribe();
+      publicChannel.unbind_all();
+      publicChannel.unsubscribe();
     };
   }, []);
 
@@ -271,58 +273,61 @@ export default function PublicChat() {
     });
 
     return () => {
-      userData.channels.forEach((channel) => {
-        if (pusherClient.channel(channel).subscribed) {
-          // pusherClient.channel(channel).unbind();
-          pusherClient.unsubscribe(channel);
-        }
-      });
-      // pusherClient.allChannels().forEach((channel) => {
-      //   if (channel.name !== "notification") {
-      //     channel.unbind_all();
-      //     channel.unsubscribe();
-      //     console.log("Unsubbing from channel: ", channel.name);
+      // userData.channels.forEach((channel) => {
+      //   if (pusherClient.channel(channel).subscribed) {
+      //     // pusherClient.channel(channel).unbind();
+      //     pusherClient.unsubscribe(channel);
       //   }
       // });
+      console.log("THis runs");
+      pusherClient.allChannels().forEach((channel) => {
+        if (channel.name !== "notification") {
+          channel.unbind_all();
+          channel.unsubscribe();
+          console.log("Unsubbing from channel: ", channel.name);
+        }
+      });
     };
   }, [userData]);
 
   React.useEffect(() => {
     if (pusherClient.channels) {
       pusherClient.channels.all().forEach((channel) => {
-        channel.unbind_all();
-        channel.bind("chat-update", (data: ChatUpdateDataType) => {
-          const { message, userName } = data;
+        if (channel.name !== "notification") {
+          channel.unbind_all();
+          channel.bind("chat-update", (data: ChatUpdateDataType) => {
+            const { message, userName } = data;
 
-          if (userName === userData.name) {
-            setChats((oldChats) => [
-              ...oldChats,
-              {
-                message,
-                userName,
-              },
-            ]);
-          }
+            if (userName === userData.name) {
+              setChats((oldChats) => [
+                ...oldChats,
+                {
+                  message,
+                  userName,
+                },
+              ]);
+            }
 
-          if (selectedReceiver?.name === userName) {
-            setChats((oldChats) => [
-              ...oldChats,
-              {
-                message,
-                userName,
-              },
-            ]);
-          }
+            if (selectedReceiver?.name === userName) {
+              setChats((oldChats) => [
+                ...oldChats,
+                {
+                  message,
+                  userName,
+                },
+              ]);
+            }
 
-          if (selectedReceiver?.name !== userName) {
-            setMessageNotification({
-              seen: false,
-              senderUserName: userName,
-              message: data.message,
-              receiverUserName: data.reciverName,
-            });
-          }
-        });
+            if (selectedReceiver?.name !== userName) {
+              setMessageNotification({
+                seen: false,
+                senderUserName: userName,
+                message: data.message,
+                receiverUserName: data.reciverName,
+              });
+            }
+          });
+        }
       });
     }
   }, [selectedReceiver]);
@@ -371,7 +376,7 @@ export default function PublicChat() {
     setChats([]);
     setMessageNotification({ seen: true });
     setSelectedReceiver(selectedDispatcher);
-    navigate("/public-chat/new");
+    navigate("/public-chat/123");
   };
 
   React.useEffect(() => {
