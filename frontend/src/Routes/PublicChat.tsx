@@ -159,13 +159,49 @@ export default function PublicChat() {
           { message: data.message, userName: data.senderUserName },
         ]);
       }
-      setUserData(() => {
-        if (data.senderUserName === userData.name) {
-          return data.senderData;
-        } else {
-          return data.receiverData;
+      // setUserData(() => {
+      //   if (data.senderUserName === userData.name) {
+      //     return data.senderData;
+      //   } else {
+      //     return data.receiverData;
+      //   }
+      // });
+
+      const newChannel = pusherClient.subscribe(data.channelName);
+
+      newChannel.bind("chat-update", (data: ChatUpdateDataType) => {
+        const { message, userName } = data;
+
+        if (userName === userData.name) {
+          setChats((oldChats) => [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ]);
+        }
+
+        if (selectedReceiver?.name === userName) {
+          setChats((oldChats) => [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ]);
+        }
+
+        if (selectedReceiver?.name !== userName) {
+          setMessageNotification({
+            seen: false,
+            senderUserName: userName,
+            message: data.message,
+            receiverUserName: data.reciverName,
+          });
         }
       });
+
       if (data.receiverUserName === userData.name) {
         setMessageNotification({ ...data, seen: false });
       }
