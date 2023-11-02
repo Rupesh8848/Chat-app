@@ -31,6 +31,7 @@ import { storage } from "../firebase";
 import FileNameCard from "../Components/FileNameCard";
 import { useNavigate } from "react-router-dom";
 import { Channel } from "pusher-js";
+import channel from "pusher-js/types/src/core/channels/channel";
 
 type ChatUpdateDataType = {
   message: string;
@@ -220,8 +221,36 @@ export default function PublicChat() {
           receiverUserName: data.reciverName,
         });
       }
-      setNewChannel(null);
     });
+    newChannel?.bind("file-message", (data: ChatUpdateDataType) => {
+      //here message contains the filename that was shared
+      const { message, userName, fileURL, type, reciverName } = data;
+
+      if (userName === userData.name) {
+        setChats((oldChats) => [
+          ...oldChats,
+          { message, userName, fileURL, type },
+        ]);
+      }
+
+      if (selectedReceiver?.name === userName) {
+        setChats((oldChats) => [
+          ...oldChats,
+          { message, userName, fileURL, type },
+        ]);
+      }
+
+      if (selectedReceiver?.name !== userName) {
+        setMessageNotification({
+          seen: false,
+          senderUserName: userName,
+          message,
+          receiverUserName: reciverName,
+        });
+      }
+    });
+
+    setNewChannel(null);
   }, [newChannel]);
 
   React.useEffect(() => {
@@ -281,33 +310,33 @@ export default function PublicChat() {
         // );
 
         // for files
-        // channel.bind("file-message", (data: ChatUpdateDataType) => {
-        //   //here message contains the filename that was shared
-        //   const { message, userName, fileURL, type, reciverName } = data;
+        channel.bind("file-message", (data: ChatUpdateDataType) => {
+          //here message contains the filename that was shared
+          const { message, userName, fileURL, type, reciverName } = data;
 
-        //   if (userName === userData.name) {
-        //     setChats((oldChats) => [
-        //       ...oldChats,
-        //       { message, userName, fileURL, type },
-        //     ]);
-        //   }
+          if (userName === userData.name) {
+            setChats((oldChats) => [
+              ...oldChats,
+              { message, userName, fileURL, type },
+            ]);
+          }
 
-        //   if (selectedReceiver?.name === userName) {
-        //     setChats((oldChats) => [
-        //       ...oldChats,
-        //       { message, userName, fileURL, type },
-        //     ]);
-        //   }
+          if (selectedReceiver?.name === userName) {
+            setChats((oldChats) => [
+              ...oldChats,
+              { message, userName, fileURL, type },
+            ]);
+          }
 
-        //   if (selectedReceiver?.name !== userName) {
-        //     setMessageNotification({
-        //       seen: false,
-        //       senderUserName: userName,
-        //       message,
-        //       receiverUserName: reciverName,
-        //     });
-        //   }
-        // });
+          if (selectedReceiver?.name !== userName) {
+            setMessageNotification({
+              seen: false,
+              senderUserName: userName,
+              message,
+              receiverUserName: reciverName,
+            });
+          }
+        });
 
         channel.bind("pusher:subscription_error", (error) => {
           console.log(error);
@@ -326,7 +355,6 @@ export default function PublicChat() {
       //     pusherClient.unsubscribe(channel);
       //   }
       // });
-      console.log("THis runs");
       pusherClient.allChannels().forEach((channel) => {
         if (channel.name !== "notification") {
           channel.unbind_all();
@@ -382,6 +410,34 @@ export default function PublicChat() {
                 senderUserName: userName,
                 message: data.message,
                 receiverUserName: data.reciverName,
+              });
+            }
+          });
+
+          channel.bind("file-message", (data: ChatUpdateDataType) => {
+            //here message contains the filename that was shared
+            const { message, userName, fileURL, type, reciverName } = data;
+
+            if (userName === userData.name) {
+              setChats((oldChats) => [
+                ...oldChats,
+                { message, userName, fileURL, type },
+              ]);
+            }
+
+            if (selectedReceiver?.name === userName) {
+              setChats((oldChats) => [
+                ...oldChats,
+                { message, userName, fileURL, type },
+              ]);
+            }
+
+            if (selectedReceiver?.name !== userName) {
+              setMessageNotification({
+                seen: false,
+                senderUserName: userName,
+                message,
+                receiverUserName: reciverName,
               });
             }
           });
