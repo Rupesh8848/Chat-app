@@ -30,6 +30,7 @@ import {
 import { storage } from "../firebase";
 import FileNameCard from "../Components/FileNameCard";
 import { useNavigate } from "react-router-dom";
+import { Channel } from "pusher-js";
 
 type ChatUpdateDataType = {
   message: string;
@@ -139,6 +140,8 @@ export default function PublicChat() {
     getDispatchersList();
   }, []);
 
+  const [newChannel, setNewChannel] = React.useState<null | Channel>(null);
+
   React.useEffect(() => {
     //new channel creation handler
     const publicChannel = pusherClient.subscribe("notification");
@@ -170,38 +173,7 @@ export default function PublicChat() {
 
       if (data.senderUserName === userData.name) {
         const channel = pusherClient.subscribe(data.channelName);
-        channel.bind("chat-update", (data: ChatUpdateDataType) => {
-          const { message, userName } = data;
-
-          if (userName === userData.name) {
-            setChats((oldChats) => [
-              ...oldChats,
-              {
-                message,
-                userName,
-              },
-            ]);
-          }
-
-          if (selectedReceiver?.name === userName) {
-            setChats((oldChats) => [
-              ...oldChats,
-              {
-                message,
-                userName,
-              },
-            ]);
-          }
-
-          if (selectedReceiver?.name !== userName) {
-            setMessageNotification({
-              seen: false,
-              senderUserName: userName,
-              message: data.message,
-              receiverUserName: data.reciverName,
-            });
-          }
-        });
+        setNewChannel(channel);
       }
     });
 
@@ -210,6 +182,42 @@ export default function PublicChat() {
       publicChannel.unsubscribe();
     };
   }, []);
+
+  React.useEffect(() => {
+    newChannel?.bind("chat-update", (data: ChatUpdateDataType) => {
+      const { message, userName } = data;
+
+      if (userName === userData.name) {
+        setChats((oldChats) => [
+          ...oldChats,
+          {
+            message,
+            userName,
+          },
+        ]);
+      }
+
+      if (selectedReceiver?.name === userName) {
+        setChats((oldChats) => [
+          ...oldChats,
+          {
+            message,
+            userName,
+          },
+        ]);
+      }
+
+      if (selectedReceiver?.name !== userName) {
+        setMessageNotification({
+          seen: false,
+          senderUserName: userName,
+          message: data.message,
+          receiverUserName: data.reciverName,
+        });
+      }
+      setNewChannel(null);
+    });
+  }, [newChannel]);
 
   React.useEffect(() => {
     localStorage.setItem("userData", JSON.stringify(userData));
