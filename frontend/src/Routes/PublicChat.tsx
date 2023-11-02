@@ -167,6 +167,41 @@ export default function PublicChat() {
       if (data.receiverUserName === userData.name) {
         setMessageNotification({ ...data, seen: false });
       }
+
+      const publicChannel = pusherClient.subscribe(data.channelName);
+
+      publicChannel.bind("chat-update", (data: ChatUpdateDataType) => {
+        const { message, userName } = data;
+
+        if (userName === userData.name) {
+          setChats((oldChats) => [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ]);
+        }
+
+        if (selectedReceiver?.name === userName) {
+          setChats((oldChats) => [
+            ...oldChats,
+            {
+              message,
+              userName,
+            },
+          ]);
+        }
+
+        if (selectedReceiver?.name !== userName) {
+          setMessageNotification({
+            seen: false,
+            senderUserName: userName,
+            message: data.message,
+            receiverUserName: data.reciverName,
+          });
+        }
+      });
     });
 
     return () => {
