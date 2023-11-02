@@ -124,8 +124,6 @@ export default function PublicChat() {
       const res = await axios.get(
         `http://localhost:8000/api/user/user-data/${userId}`
       );
-
-      console.log(res.data);
     }
     getUserData();
   }, []);
@@ -153,8 +151,6 @@ export default function PublicChat() {
     });
 
     publicChannel.bind("message-notification", (data: MessageNotification) => {
-      console.log("New channel event", data.channelName);
-
       if (data.senderUserName === userData.name) {
         setChats((oldChat) => [
           ...oldChat,
@@ -174,7 +170,8 @@ export default function PublicChat() {
     });
 
     return () => {
-      pusherClient.unsubscribe("notification");
+      pusherClient.channel("notification").unbind_all();
+      pusherClient.channel("notification").unsubscribe();
     };
   }, []);
 
@@ -184,106 +181,153 @@ export default function PublicChat() {
 
   React.useEffect(() => {
     userData.channels.forEach((channelToSubscribe) => {
-      const channel = pusherClient.subscribe(channelToSubscribe);
+      if (!pusherClient?.channel(channelToSubscribe)?.subscribed) {
+        const channel = pusherClient.subscribe(channelToSubscribe);
 
-      channel.bind("chat-update", (data: ChatUpdateDataType) => {
-        const { message, userName } = data;
+        channel.bind("chat-update", (data: ChatUpdateDataType) => {
+          const { message, userName } = data;
 
-        if (userName === userData.name) {
-          setChats((oldChats) => [
-            ...oldChats,
-            {
-              message,
-              userName,
-            },
-          ]);
-        }
+          if (userName === userData.name) {
+            setChats((oldChats) => [
+              ...oldChats,
+              {
+                message,
+                userName,
+              },
+            ]);
+          }
 
-        if (selectedReceiver?.name === userName) {
-          setChats((oldChats) => [
-            ...oldChats,
-            {
-              message,
-              userName,
-            },
-          ]);
-        }
+          if (selectedReceiver?.name === userName) {
+            setChats((oldChats) => [
+              ...oldChats,
+              {
+                message,
+                userName,
+              },
+            ]);
+          }
 
-        if (selectedReceiver?.name !== userName) {
-          console.log(data);
-          setMessageNotification({
-            seen: false,
-            senderUserName: userName,
-            message: data.message,
-            receiverUserName: data.reciverName,
-          });
-        }
-      });
+          if (selectedReceiver?.name !== userName) {
+            setMessageNotification({
+              seen: false,
+              senderUserName: userName,
+              message: data.message,
+              receiverUserName: data.reciverName,
+            });
+          }
+        });
 
-      channel.bind(
-        "is-typing",
-        (data: { message: string; senderUserName: string }) => {
-          setIsTypingData({
-            message: data.message,
-            isTyping: true,
-            senderName: data.senderUserName,
-          });
-          setTimeout(() => {
-            setIsTypingData({ message: "", isTyping: false, senderName: "" });
-          }, 2000);
-        }
-      );
+        // channel.bind(
+        //   "is-typing",
+        //   (data: { message: string; senderUserName: string }) => {
+        //     setIsTypingData({
+        //       message: data.message,
+        //       isTyping: true,
+        //       senderName: data.senderUserName,
+        //     });
+        //     setTimeout(() => {
+        //       setIsTypingData({ message: "", isTyping: false, senderName: "" });
+        //     }, 2000);
+        //   }
+        // );
 
-      // for files
-      channel.bind("file-message", (data: ChatUpdateDataType) => {
-        //here message contains the filename that was shared
-        const { message, userName, fileURL, type, reciverName } = data;
+        // for files
+        // channel.bind("file-message", (data: ChatUpdateDataType) => {
+        //   //here message contains the filename that was shared
+        //   const { message, userName, fileURL, type, reciverName } = data;
 
-        if (userName === userData.name) {
-          setChats((oldChats) => [
-            ...oldChats,
-            { message, userName, fileURL, type },
-          ]);
-        }
+        //   if (userName === userData.name) {
+        //     setChats((oldChats) => [
+        //       ...oldChats,
+        //       { message, userName, fileURL, type },
+        //     ]);
+        //   }
 
-        if (selectedReceiver?.name === userName) {
-          setChats((oldChats) => [
-            ...oldChats,
-            { message, userName, fileURL, type },
-          ]);
-        }
+        //   if (selectedReceiver?.name === userName) {
+        //     setChats((oldChats) => [
+        //       ...oldChats,
+        //       { message, userName, fileURL, type },
+        //     ]);
+        //   }
 
-        if (selectedReceiver?.name !== userName) {
-          console.log(data);
-          setMessageNotification({
-            seen: false,
-            senderUserName: userName,
-            message,
-            receiverUserName: reciverName,
-          });
-        }
-
-        // setChats((oldChat) => {
-        //   return [...oldChat, { message, userName, fileURL, type }];
+        //   if (selectedReceiver?.name !== userName) {
+        //     setMessageNotification({
+        //       seen: false,
+        //       senderUserName: userName,
+        //       message,
+        //       receiverUserName: reciverName,
+        //     });
+        //   }
         // });
-      });
+
+        channel.bind("pusher:subscription_error", (error) => {
+          console.log(error);
+        });
+
+        channel.bind("pusher:subscription_succeeded", () => {
+          console.log("Subbed to channel: ", channel.name);
+        });
+      }
     });
 
     return () => {
-      // userData.channels.forEach((channelToUnSub) => {
-      //   pusherClient.unsubscribe(channelToUnSub);
-      // });
-      pusherClient.allChannels().forEach((channel) => {
-        if (channel.name !== "notification") {
-          channel.unbind_all();
-          channel.unsubscribe();
+      userData.channels.forEach((channel) => {
+        if (pusherClient.channel(channel).subscribed) {
+          // pusherClient.channel(channel).unbind();
+          pusherClient.unsubscribe(channel);
         }
       });
+      // pusherClient.allChannels().forEach((channel) => {
+      //   if (channel.name !== "notification") {
+      //     channel.unbind_all();
+      //     channel.unsubscribe();
+      //     console.log("Unsubbing from channel: ", channel.name);
+      //   }
+      // });
     };
-  }, [userData, selectedReceiver]);
+  }, [userData]);
+
+  React.useEffect(() => {
+    if (pusherClient.channels) {
+      pusherClient.channels.all().forEach((channel) => {
+        channel.unbind_all();
+        channel.bind("chat-update", (data: ChatUpdateDataType) => {
+          const { message, userName } = data;
+
+          if (userName === userData.name) {
+            setChats((oldChats) => [
+              ...oldChats,
+              {
+                message,
+                userName,
+              },
+            ]);
+          }
+
+          if (selectedReceiver?.name === userName) {
+            setChats((oldChats) => [
+              ...oldChats,
+              {
+                message,
+                userName,
+              },
+            ]);
+          }
+
+          if (selectedReceiver?.name !== userName) {
+            setMessageNotification({
+              seen: false,
+              senderUserName: userName,
+              message: data.message,
+              receiverUserName: data.reciverName,
+            });
+          }
+        });
+      });
+    }
+  }, [selectedReceiver]);
 
   const submitMessage = async () => {
-    console.log(selectedReceiver);
     if (!selectedReceiver) return;
 
     const channelName =
@@ -372,14 +416,12 @@ export default function PublicChat() {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setFiles([...event.target.files]);
-      console.log(files);
       cancelAllUploadsWithProgress(fileUploadProgress);
       setUploadFileProgress(undefined);
     }
   };
 
   const uploadFileToDB = (item: File) => {
-    console.log("Uploading file");
     const metadata = {
       contentType: item.type,
     };
@@ -459,7 +501,6 @@ export default function PublicChat() {
 
   const handleFileUpload = () => {
     files?.forEach(async (file) => {
-      console.log(file);
       await uploadFileToDB(file);
     });
   };
@@ -666,7 +707,6 @@ export default function PublicChat() {
                 }}
                 value={message || " "}
                 onSend={() => {
-                  console.log("On send triggered");
                   if (message.length > 0) {
                     submitMessage();
                     setMessage("");
@@ -686,9 +726,6 @@ export default function PublicChat() {
           onChange={handleChange}
           hidden
           ref={fileInputRef}
-          onClick={() => {
-            console.log("Clicked");
-          }}
         />
       </div>
     </div>

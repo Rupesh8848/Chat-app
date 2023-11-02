@@ -32,7 +32,6 @@ app.use("/api/user", userRoute);
 app.use("/api/typing-status", isTypingRoute);
 
 app.post("/pusher/user-auth", (request, response) => {
-  console.log("Pusher user auth hit");
   try {
     const socketId = request.body.socket_id;
     const id = request.body.id;
@@ -46,7 +45,6 @@ app.post("/pusher/user-auth", (request, response) => {
 
     return response.send(auth);
   } catch (error) {
-    console.log(error);
     return response
       .status(400)
       .send("There was some error authenticating user.");
@@ -66,7 +64,6 @@ app.post("/pusher/auth", async (request, response) => {
 
     return response.send(auth);
   } catch (error) {
-    console.log(error);
     return response
       .status(400)
       .send("There was some error authenticating user.");
