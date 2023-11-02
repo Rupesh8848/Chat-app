@@ -167,41 +167,6 @@ export default function PublicChat() {
       if (data.receiverUserName === userData.name) {
         setMessageNotification({ ...data, seen: false });
       }
-
-      const publicChannel = pusherClient.subscribe(data.channelName);
-
-      publicChannel.bind("chat-update", (data: ChatUpdateDataType) => {
-        const { message, userName } = data;
-
-        if (userName === userData.name) {
-          setChats((oldChats) => [
-            ...oldChats,
-            {
-              message,
-              userName,
-            },
-          ]);
-        }
-
-        if (selectedReceiver?.name === userName) {
-          setChats((oldChats) => [
-            ...oldChats,
-            {
-              message,
-              userName,
-            },
-          ]);
-        }
-
-        if (selectedReceiver?.name !== userName) {
-          setMessageNotification({
-            seen: false,
-            senderUserName: userName,
-            message: data.message,
-            receiverUserName: data.reciverName,
-          });
-        }
-      });
     });
 
     return () => {
@@ -324,6 +289,17 @@ export default function PublicChat() {
   }, []);
 
   React.useEffect(() => {
+    const subbedChannels: Array<string> = [];
+    pusherClient.channels
+      .all()
+      .forEach((channel) => subbedChannels.push(channel.name));
+
+    userData.channels.forEach((channel) => {
+      if (!subbedChannels.includes(channel)) {
+        pusherClient.subscribe(channel);
+      }
+    });
+
     if (pusherClient.channels) {
       pusherClient.channels.all().forEach((channel) => {
         if (channel.name !== "notification") {
