@@ -162,10 +162,15 @@ export default function PublicChat() {
           { message: data.message, userName: data.senderUserName },
         ]);
       }
-      setUserData((oldData) => ({
-        ...oldData,
-        channels: oldData.channels.concat(data.channelName),
-      }));
+      if (
+        data.senderUserName === userData.name ||
+        data.receiverUserName === userData.name
+      ) {
+        setUserData((oldData) => ({
+          ...oldData,
+          channels: oldData.channels.concat(data.channelName),
+        }));
+      }
 
       if (data.receiverUserName === userData.name) {
         setMessageNotification({ ...data, seen: false });
