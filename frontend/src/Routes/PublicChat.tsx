@@ -250,6 +250,20 @@ export default function PublicChat() {
       }
     });
 
+    newChannel?.bind(
+      "is-typing",
+      (data: { message: string; senderUserName: string }) => {
+        setIsTypingData({
+          message: data.message,
+          isTyping: true,
+          senderName: data.senderUserName,
+        });
+        setTimeout(() => {
+          setIsTypingData({ message: "", isTyping: false, senderName: "" });
+        }, 2000);
+      }
+    );
+
     setNewChannel(null);
   }, [newChannel]);
 
@@ -295,19 +309,19 @@ export default function PublicChat() {
           }
         });
 
-        // channel.bind(
-        //   "is-typing",
-        //   (data: { message: string; senderUserName: string }) => {
-        //     setIsTypingData({
-        //       message: data.message,
-        //       isTyping: true,
-        //       senderName: data.senderUserName,
-        //     });
-        //     setTimeout(() => {
-        //       setIsTypingData({ message: "", isTyping: false, senderName: "" });
-        //     }, 2000);
-        //   }
-        // );
+        channel.bind(
+          "is-typing",
+          (data: { message: string; senderUserName: string }) => {
+            setIsTypingData({
+              message: data.message,
+              isTyping: true,
+              senderName: data.senderUserName,
+            });
+            setTimeout(() => {
+              setIsTypingData({ message: "", isTyping: false, senderName: "" });
+            }, 2000);
+          }
+        );
 
         // for files
         channel.bind("file-message", (data: ChatUpdateDataType) => {
@@ -414,6 +428,24 @@ export default function PublicChat() {
             }
           });
 
+          channel.bind(
+            "is-typing",
+            (data: { message: string; senderUserName: string }) => {
+              setIsTypingData({
+                message: data.message,
+                isTyping: true,
+                senderName: data.senderUserName,
+              });
+              setTimeout(() => {
+                setIsTypingData({
+                  message: "",
+                  isTyping: false,
+                  senderName: "",
+                });
+              }, 2000);
+            }
+          );
+
           channel.bind("file-message", (data: ChatUpdateDataType) => {
             //here message contains the filename that was shared
             const { message, userName, fileURL, type, reciverName } = data;
@@ -474,15 +506,15 @@ export default function PublicChat() {
 
   const isTypingHandler = async () => {
     if (!selectedReceiver) return;
-    // await axios.post("http://localhost:8000/api/typing-status/", {
-    //   userName: userData.name,
-    //   reciverName: selectedReceiver.name,
-    //   message,
-    //   channel:
-    //     userData.name > selectedReceiver?.name
-    //       ? `presence-${selectedReceiver?.name}-${userData.name}`
-    //       : `presence-${userData.name}-${selectedReceiver?.name}`,
-    // });
+    await axios.post("http://localhost:8000/api/typing-status/", {
+      userName: userData.name,
+      reciverName: selectedReceiver.name,
+      message,
+      channel:
+        userData.name > selectedReceiver?.name
+          ? `presence-${selectedReceiver?.name}-${userData.name}`
+          : `presence-${userData.name}-${selectedReceiver?.name}`,
+    });
   };
 
   const handleConversationClick = async (selectedDispatcher: Dispatcher) => {
@@ -755,8 +787,8 @@ export default function PublicChat() {
                       <Message.HtmlContent
                         html={
                           !isImage
-                            ? `<strong class="file-message"> <a href=${chat.fileURL}>${chat.message}</a> </strong>`
-                            : `<a href=${chat.fileURL}> <img src=${chat.fileURL} width="200px" height="200px" alt="${chat.message}"/></a> `
+                            ? `<strong class="file-message"> <a target="_blank" href=${chat.fileURL}>${chat.message}</a> </strong>`
+                            : `<a href=${chat.fileURL} target="_blank"> <img src=${chat.fileURL} width="200px" height="200px" alt="${chat.message}"/></a> `
                         }
                       />
                     </Message>
@@ -798,7 +830,7 @@ export default function PublicChat() {
                 <ExpansionPanel
                   title="Files"
                   open={true}
-                  className="absolute bottom-0 w-[80%] left-[5rem] "
+                  className="sticky bottom-0 w-[80%] left-[5rem] "
                 >
                   <div className="flex-col gap-y-8 justify-between h-[40vh]">
                     {files.map((file) => {
