@@ -38,7 +38,7 @@ export default function Chat() {
   }, []);
 
   const submitMessage = async () => {
-    await axios.post("http://localhost:8000/api/message", {
+    await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/message`, {
       userName,
       message,
     });

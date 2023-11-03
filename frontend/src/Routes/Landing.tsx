@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ClockLoader } from "react-spinners";
+import Spinner from "../Components/Spinner";
 export default function Landing({
   userName,
   handleChange,
@@ -32,13 +32,7 @@ export default function Landing({
   return (
     <>
       <div className="container mx-auto h-screen flex flex-col justify-center items-center ">
-        {loading && (
-          <div className="inset-0 absolute bg-[rgba(0,0,0,0.5)] flex items-center justify-center">
-            <div className="p-4 bg-[#2AD575]">
-              <ClockLoader color="#D52A8A" size={100} />
-            </div>
-          </div>
-        )}
+        <Spinner showSpinner={loading} />
         <div
           className="border-2 border-gray-400 shadow-lg rounded-lg p-8 mb-8"
           style={{ backgroundColor: "#FFE5B4" }}

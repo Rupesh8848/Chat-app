@@ -22,7 +22,7 @@ function App() {
     setLoading(true);
     e.preventDefault();
     const response = await axios.post(
-      "http://localhost:8000/api/user/auth/login",
+      `${import.meta.env.VITE_SERVER_URL}/api/user/auth/login`,
       {
         dispatcherName: userName,
       }

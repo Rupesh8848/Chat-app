@@ -4,7 +4,7 @@ export const pusherClient = new Pusher(import.meta.env.VITE_KEY, {
   cluster: import.meta.env.VITE_CLUSTER,
   forceTLS: true,
   userAuthentication: {
-    endpoint: "http://localhost:8000/pusher/user-auth",
+    endpoint: `${import.meta.env.VITE_SERVER_URL}/pusher/user-auth`,
     transport: "ajax",
     paramsProvider() {
       const userData = localStorage.getItem("userData");
@@ -20,7 +20,7 @@ export const pusherClient = new Pusher(import.meta.env.VITE_KEY, {
     },
   },
   channelAuthorization: {
-    endpoint: "http://localhost:8000/pusher/auth",
+    endpoint: `${import.meta.env.VITE_SERVER_URL}/pusher/auth`,
     transport: "ajax",
     paramsProvider() {
       const userData = localStorage.getItem("userData");

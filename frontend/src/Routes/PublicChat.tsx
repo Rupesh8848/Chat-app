@@ -124,7 +124,7 @@ export default function PublicChat() {
       if (!localStorage.getItem("userData")) return;
       const userId = JSON.parse(localStorage.getItem("userData") || "").id;
       const res = await axios.get(
-        `http://localhost:8000/api/user/user-data/${userId}`
+        `${import.meta.env.VITE_SERVER_URL}/api/user/user-data/${userId}`
       );
     }
     getUserData();
@@ -133,7 +133,7 @@ export default function PublicChat() {
   React.useLayoutEffect(() => {
     async function getDispatchersList() {
       const dispatchersData = await axios.get(
-        `http://localhost:8000/api/user/dispatchers/${userData.id}`
+        `${import.meta.env.VITE_SERVER_URL}/api/user/dispatchers/${userData.id}`
       );
 
       setDispatcherData(dispatchersData.data);
@@ -487,7 +487,7 @@ export default function PublicChat() {
         : `presence-${userData.name}-${selectedReceiver?.name}`;
 
     if (userData.channels.includes(channelName)) {
-      await axios.post("http://localhost:8000/api/message/", {
+      await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/message/`, {
         message,
         userName: userData.name,
         channelName,
@@ -495,18 +495,21 @@ export default function PublicChat() {
       });
     } else {
       // its labelled as public route but the message will be sent to their respective channel rather than public channel
-      await axios.post("http://localhost:8000/api/message/public", {
-        userName: userData.name,
-        message,
-        reciverName: selectedReceiver.name,
-        channel: channelName,
-      });
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/message/public`,
+        {
+          userName: userData.name,
+          message,
+          reciverName: selectedReceiver.name,
+          channel: channelName,
+        }
+      );
     }
   };
 
   const isTypingHandler = async () => {
     if (!selectedReceiver) return;
-    await axios.post("http://localhost:8000/api/typing-status/", {
+    await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/typing-status/`, {
       userName: userData.name,
       reciverName: selectedReceiver.name,
       message,
@@ -550,7 +553,9 @@ export default function PublicChat() {
   React.useEffect(() => {
     async function fetchNewMesg() {
       const response = await axios.get(
-        `http://localhost:8000/api/message/${userData.name}/${selectedReceiver?.name}`
+        `${import.meta.env.VITE_SERVER_URL}/api/message/${userData.name}/${
+          selectedReceiver?.name
+        }`
       );
 
       setChats(response.data);
@@ -621,13 +626,16 @@ export default function PublicChat() {
             userData.name > selectedReceiver?.name
               ? `presence-${selectedReceiver?.name}-${userData.name}`
               : `presence-${userData.name}-${selectedReceiver?.name}`;
-          await axios.post("http://localhost:8000/api/message/file", {
-            userName: userData.name,
-            fileURL: downloadURL,
-            reciverName: selectedReceiver?.name,
-            channel: channelName,
-            fileName: item.name,
-          });
+          await axios.post(
+            `${import.meta.env.VITE_SERVER_URL}/api/message/file`,
+            {
+              userName: userData.name,
+              fileURL: downloadURL,
+              reciverName: selectedReceiver?.name,
+              channel: channelName,
+              fileName: item.name,
+            }
+          );
         });
         setFiles((allFiles) => {
           if (allFiles?.length === 1) {

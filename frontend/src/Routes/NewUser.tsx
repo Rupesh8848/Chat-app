@@ -6,12 +6,14 @@ import toast from "react-hot-toast";
 import { storage } from "../firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
+import Spinner from "../Components/Spinner";
 
 const NewUser = () => {
   const [input, setInput] = React.useState("");
   const [file, setFile] = React.useState(null);
   const [error, setError] = React.useState<string | null>(null);
   const [fileError, setFileError] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState<boolean>(false);
 
   // const fileTypes = ["JPG", "PNG", "GIF"];
   const navigation = useNavigate();
@@ -26,20 +28,24 @@ const NewUser = () => {
   };
 
   const handleCreate = async () => {
+    setLoading(true);
     if ((input || input.trim().length > 0) && file) {
       const ImageRef = ref(storage, `images/${file + v4()}`);
       uploadBytes(ImageRef, file).then((response) => {
         getDownloadURL(response.ref).then(async (url) => {
           console.log(url);
           const res = await axios.post(
-            "http://localhost:8000/api/user/new-user",
+            `${import.meta.env.VITE_SERVER_URL}/api/user/new-user`,
             {
               userName: input,
               profilePic: url,
             }
           );
           if (res.data.success) {
+            setLoading(false);
+
             toast.success(res.data.message);
+
             setTimeout(() => {
               navigation("/");
             }, 2000);
@@ -51,17 +57,18 @@ const NewUser = () => {
     }
     if (!input) {
       setError("Username is required");
-      return;
+      setLoading(false);
     }
 
     if (!file) {
       setFileError("Please upload your profile picture.");
-      return;
+      setLoading(false);
     }
   };
 
   return (
     <div className="container mx-auto h-screen flex flex-col justify-center items-center ">
+      <Spinner showSpinner={loading} />
       <div
         className="border-2 border-gray-400 shadow-lg rounded-lg p-6 mb-8"
         style={{ backgroundColor: "#FFE5B4" }}
@@ -97,8 +104,16 @@ const NewUser = () => {
           {fileError && <p className="text-red-500 mb-2">{fileError}</p>}
 
           <button
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-            onClick={handleCreate}
+            disabled={loading}
+            className={` text-white px-4 py-2 rounded-lg ${
+              loading
+                ? "bg-blue-500 cursor-not-allowed"
+                : "bg-blue-700 cursor-pointer"
+            } `}
+            onClick={() => {
+              setLoading(true);
+              handleCreate();
+            }}
           >
             Add
           </button>
