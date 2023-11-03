@@ -5,7 +5,6 @@ const isTypingRoute = express.Router();
 
 isTypingRoute.post("/", async (req, res) => {
   const { userName, reciverName, channel, message } = req.body;
-  console.log(userName, reciverName, channel, message);
   pusherServer.trigger(channel, "is-typing", {
     senderUserName: userName,
     reciverName,

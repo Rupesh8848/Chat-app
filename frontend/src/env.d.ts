@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_KEY: string;
   readonly VITE_SECRET: string;
   readonly VITE_CLUSTER: string;
+  readonly VITE_SERVER_URL: string;
+
   // more env variables...
 }
 

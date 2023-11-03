@@ -3,7 +3,6 @@ const { pusherServer } = require("../lib/pusher");
 
 const userLogin = async (req, res) => {
   const { dispatcherName } = req.body;
-  console.log("Dispatchers name: ", dispatcherName);
   const dispatchersRef = firestoreDB.collection("dispatchers");
   const snapshot = await dispatchersRef
     .where("name", "==", dispatcherName)
@@ -27,7 +26,6 @@ const userLogin = async (req, res) => {
 };
 
 const registerNewUser = async (req, res) => {
-  console.log("New dispathcer route hit");
   const { userName, profilePic } = req.body;
 
   try {
@@ -55,7 +53,6 @@ const registerNewUser = async (req, res) => {
     });
 
     const newDispatcherData = (await response.get()).data();
-    console.log(newDispatcherData);
 
     pusherServer.trigger("notification", "new-dispatcher", newDispatcherData);
 
@@ -65,7 +62,6 @@ const registerNewUser = async (req, res) => {
         "Dispatcher successfully created. \nYou'll be redirected shortly",
     });
   } catch (error) {
-    console.log(error);
     return res.json({
       success: false,
       message: "Some error occured while creating a new dispatcher",
@@ -81,7 +77,6 @@ const getAllDispatchers = async (req, res) => {
   snapshot.docs.forEach((dispatcher) => {
     const dispatcherData = dispatcher.data();
     if (+dispatcherData.id !== +requestingUserId) {
-      console.log(dispatcherData.id, requestingUserId);
       dispatchers.push(dispatcher.data());
     }
   });

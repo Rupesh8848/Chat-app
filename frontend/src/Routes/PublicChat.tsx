@@ -678,9 +678,12 @@ export default function PublicChat() {
         LogOut
       </button>
       <div className="h-[80%] w-[90%] ">
-        <MainContainer responsive>
+        <MainContainer
+          responsive
+          className="rounded-3xl shadow-2xl border-[rgba(0,0,0,0.8)] border-2 "
+        >
           <Sidebar position="left" scrollable={true}>
-            <ConversationList>
+            <ConversationList className="border-r-2 border-[rgba(0,0,0,0.8)]">
               {dispachersData.map((dispatcher: Dispatcher) => {
                 if (dispatcher?.name === userData?.name) {
                   return;
@@ -688,7 +691,8 @@ export default function PublicChat() {
 
                 return (
                   <Conversation
-                    className={`${
+                    key={dispatcher.name}
+                    className={`border-y-2 border-black ${
                       dispatcher.name === selectedReceiver?.name
                         ? "bg-gray-500"
                         : ""
@@ -733,7 +737,7 @@ export default function PublicChat() {
           </Sidebar>
           <ChatContainer>
             {selectedReceiver?.name && (
-              <ConversationHeader>
+              <ConversationHeader className="border-b-2 border-[rgba(0,0,0,0.8)]">
                 <Avatar
                   src={selectedReceiver.profilePic}
                   name={selectedReceiver?.name}
@@ -850,6 +854,7 @@ export default function PublicChat() {
 
             {selectedReceiver?.name && (
               <MessageInput
+                className="border-t-2 border-[rgba(0,0,0,0.8)]"
                 sendDisabled={false}
                 placeholder="Type message here"
                 onChange={(text) => {

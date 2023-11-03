@@ -5,7 +5,6 @@ const { firestore } = require("firebase-admin");
 const postMessage = async (req, res) => {
   const { message, userName, channelName, reciverName } = req.body;
 
-  console.log("Message received: ", message);
   try {
     firestoreDB
       .collection(channelName)
@@ -27,7 +26,6 @@ const postMessage = async (req, res) => {
           });
       });
   } catch (error) {
-    console.log(error);
     return res.status(400).json({ message: "Some error occured in server" });
   }
 };
@@ -41,7 +39,6 @@ const postPublicMessage = async (req, res) => {
     //for sender
     const snapshot = await dispatchersRef.where("name", "==", userName).get();
     if (snapshot.empty) {
-      console.log("Empty snapshot");
       return res.json({ message: "Some error occured" });
     }
 
@@ -56,7 +53,6 @@ const postPublicMessage = async (req, res) => {
       .where("name", "==", reciverName)
       .get();
     if (receiverSnapshot.empty) {
-      console.log("Empty snapshot");
       return res.json({ message: "Some error occured" });
     }
 
@@ -114,21 +110,17 @@ const postPublicMessage = async (req, res) => {
       return res.status(200);
     }
   } catch (error) {
-    console.log(error);
     return res.json({ message: "Some error occured." });
   }
 };
 
 const getMessages = async (req, res) => {
-  console.log("Fetch mesg hit");
   const { senderName, receiverName } = req.params;
 
   const channelName =
     senderName > receiverName
       ? `presence-${receiverName}-${senderName}`
       : `presence-${senderName}-${receiverName}`;
-
-  console.log(channelName);
 
   const messagesRef = firestoreDB
     .collection(channelName)
@@ -141,7 +133,6 @@ const getMessages = async (req, res) => {
   snapshot.forEach((mesg) => {
     messages.push(mesg.data());
   });
-  console.log(messages);
 
   return res.send(messages);
 };
@@ -164,7 +155,6 @@ const sendFile = async (req, res) => {
     });
     return res.status(200);
   } catch (error) {
-    console.log(error);
     return res.status(400);
   }
 };
