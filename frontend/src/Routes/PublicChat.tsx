@@ -31,7 +31,6 @@ import { storage } from "../firebase";
 import FileNameCard from "../Components/FileNameCard";
 import { useNavigate } from "react-router-dom";
 import { Channel } from "pusher-js";
-import channel from "pusher-js/types/src/core/channels/channel";
 
 type ChatUpdateDataType = {
   message: string;
@@ -123,7 +122,7 @@ export default function PublicChat() {
     async function getUserData() {
       if (!localStorage.getItem("userData")) return;
       const userId = JSON.parse(localStorage.getItem("userData") || "").id;
-      const res = await axios.get(
+      await axios.get(
         `${import.meta.env.VITE_SERVER_URL}/api/user/user-data/${userId}`
       );
     }
@@ -350,14 +349,6 @@ export default function PublicChat() {
               receiverUserName: reciverName,
             });
           }
-        });
-
-        channel.bind("pusher:subscription_error", (error) => {
-          console.log(error);
-        });
-
-        channel.bind("pusher:subscription_succeeded", () => {
-          console.log("Subbed to channel: ", channel.name);
         });
       }
     });

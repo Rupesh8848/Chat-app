@@ -10,21 +10,23 @@ import Spinner from "../Components/Spinner";
 
 const NewUser = () => {
   const [input, setInput] = React.useState("");
-  const [file, setFile] = React.useState(null);
+  const [file, setFile] = React.useState<File | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [fileError, setFileError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(false);
 
   // const fileTypes = ["JPG", "PNG", "GIF"];
   const navigation = useNavigate();
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
     setError(null);
   };
 
-  const handleFileUpload = (e) => {
-    setFile(e.target.files[0]);
-    setFileError(null);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFile(e.target.files[0]);
+      setFileError(null);
+    }
   };
 
   const handleCreate = async () => {

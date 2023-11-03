@@ -20,9 +20,7 @@ export default function Chat() {
 
   React.useEffect(() => {
     const channel = pusherClient.subscribe("presence-channel");
-    channel.bind("pusher:subscription_error", (error) => {
-      console.log(error);
-    });
+
     channel.bind("chat-update", (data: ChatUpdateDataType) => {
       console.log("Inside chat update: ", data);
       const { message, userName } = data;

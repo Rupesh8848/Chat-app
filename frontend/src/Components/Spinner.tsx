@@ -1,4 +1,3 @@
-import React from "react";
 import { ClockLoader } from "react-spinners";
 
 export default function Spinner({ showSpinner }: { showSpinner: boolean }) {
